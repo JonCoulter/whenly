@@ -1,0 +1,53 @@
+.rdp-root {
+  --rdp-accent-color: #10A37F; /* Primary color from theme */
+  --rdp-background-color: rgba(16, 163, 127, 0.15); /* Lighter version of primary */
+  margin: 0;
+}
+
+.rdp-day_selected, 
+.rdp-day_selected:focus-visible, 
+.rdp-day_selected:hover {
+  background-color: var(--rdp-accent-color);
+  color: white;
+}
+
+.rdp-day:hover:not(.rdp-day_selected) {
+  background-color: var(--rdp-background-color);
+}
+
+.rdp-day_today {
+  font-weight: bold;
+  color: var(--rdp-accent-color);
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--rdp-background-color);
+}
+
+.rdp-head_cell {
+  font-weight: 600;
+  color: #6B7280; /* Text secondary */
+}
+
+.rdp-nav_button:hover {
+  background-color: var(--rdp-background-color);
+}
+
+.rdp-caption {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Dark mode support */
+[data-mui-color-scheme="dark"] .rdp-root {
+  --rdp-accent-color: #10A37F; /* Keep same primary color */
+  --rdp-background-color: rgba(16, 163, 127, 0.2); /* Slightly adjusted for dark mode */
+}
+
+[data-mui-color-scheme="dark"] .rdp-head_cell {
+  color: #D1D5DB; /* Text secondary for dark mode */
+}
+
+[data-mui-color-scheme="dark"] .rdp-day_today {
+  color: #10A37F; /* Maintain visibility in dark mode */
+} 
