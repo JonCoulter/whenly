@@ -118,7 +118,7 @@ def calendar():
     )
 
     service = build('calendar', 'v3', credentials=creds)
-    now = datetime.utcnow().isoformat() + 'Z'
+    now = datetime.now(timezone.utc).isoformat()
 
     calendar_list = service.calendarList().list().execute()
     all_events = []
