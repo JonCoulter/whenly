@@ -220,8 +220,6 @@ def create_app(config_name='default'):
             created_at = datetime.now()
             
             # Create event in database
-            # NOTE: This code is commented out until database integration is complete
-            """
             new_event = Event(
                 id=event_id,
                 name=data['eventName'],
@@ -256,9 +254,7 @@ def create_app(config_name='default'):
                     db.session.add(slot)
                     
             db.session.commit()
-            """
             
-            # Mock response for now
             event_data = {
                 "id": event_id,
                 "name": data['eventName'],
@@ -288,24 +284,11 @@ def create_app(config_name='default'):
     def get_event(event_id):
         """Get event details by ID"""
         try:
-            # In a real app with database, would query the event
-            # event = Event.query.filter_by(id=event_id).first()
-            # if not event:
-            #     return jsonify({"success": False, "message": "Event not found"}), 404
-            # event_data = event.to_dict()
-            
-            # Mock response for now
-            event_data = {
-                "id": event_id,
-                "name": "Sample Event",
-                "eventType": "specificDays",
-                "timeRange": {
-                    "start": "09:00 AM",
-                    "end": "05:00 PM"
-                },
-                "specificDays": ["2023-11-01", "2023-11-02"],
-                "createdAt": datetime.now().isoformat()
-            }
+            # Get event details by ID
+            event = Event.query.filter_by(id=event_id).first()
+            if not event:
+                return jsonify({"success": False, "message": "Event not found"}), 404
+            event_data = event.to_dict()
             
             return jsonify({
                 "success": True,

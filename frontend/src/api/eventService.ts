@@ -25,7 +25,7 @@ export interface ApiResponse<T> {
  */
 export async function createEvent(eventData: EventFormData): Promise<ApiResponse<any>> {
   try {
-    const response = await fetch('/api/events/create', {
+    const response = await fetch('http://localhost:5000/api/events/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
