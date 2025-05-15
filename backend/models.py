@@ -4,6 +4,9 @@ import json
 
 db = SQLAlchemy()
 
+def init_app(app):
+    db.init_app(app)
+
 class Event(db.Model):
     """
     Event model representing a scheduling event
