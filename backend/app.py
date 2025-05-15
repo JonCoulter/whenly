@@ -1,102 +1,136 @@
 import os
 import pathlib
-
-# TODO: Add imports to venv and requirements.txt
 import requests
 from flask import Flask, session, abort, redirect, request
-from google.oauth2 import id_token
+from google.oauth2 import id_token, credentials as google_credentials
 from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
 from pip._vendor import cachecontrol
+from functools import wraps
 import google.auth.transport.requests
 
-
-#TODO: Setup secret key
+# === Flask Setup ===
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY')
 
-# Allows http traffic for local dev
+# Allows http traffic for local development
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-#TODO: Setup client id
+# === OAuth Setup ===
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, 'client_secret.json')
 
-# Defines how users are authorized
+SCOPES = [
+    'openid',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/calendar.readonly'
+]
+
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
-    scopes=['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email', 'openid'],
+    scopes=SCOPES,
     redirect_uri='http://localhost:5000/callback'
 )
 
-
+# === Auth Decorator ===
 def login_is_required(function):
-    """Decorator that requires user to be logged in."""
+    @wraps(function)  # <-- This line is the fix
     def wrapper(*args, **kwargs):
         if 'google_id' not in session:
             return abort(401)
-        else:
-            return function()
-
+        return function(*args, **kwargs)
     return wrapper
 
 
+# === Routes ===
+@app.route('/')
+def index():
+    return 'Hello World <a href="/login"><button>Login</button></a>'
+
 @app.route('/login')
 def login():
-    # Redirect to the authorization url from our flow
-    authorization_url, state = flow.authorization_url()
+    authorization_url, state = flow.authorization_url(prompt='consent')
     session['state'] = state
     return redirect(authorization_url)
 
-
 @app.route('/callback')
 def callback():
-    # Exchange the authorization code for a token using the provided full redirect URL
     flow.fetch_token(authorization_response=request.url)
 
-    # Check if the 'state' parameter in the URL matches the expected state stored in the session
-    if not session['state'] == request.args['state']:
+    if session['state'] != request.args['state']:
         abort(500)
 
-    # Retrieve the credentials object which now contains the access and refresh tokens
     credentials = flow.credentials
 
-    # Create a new session for making http requests with caching
+    # Save credentials for later use
+    session['credentials'] = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+
+    # Verify ID token
     request_session = requests.session()
     cached_session = cachecontrol.CacheControl(request_session)
-
-    # Create a Google-auth-specific request object that will be used to verify the id token
     token_request = google.auth.transport.requests.Request(session=cached_session)
 
-    # Verify the OAuth2 id token with Google's servers to confirm it's valid
     id_info = id_token.verify_oauth2_token(
-        id_token=credentials._id_token,
-        request=token_request,
+        credentials.id_token,
+        token_request,
         audience=GOOGLE_CLIENT_ID
     )
 
-    # Store the user's unique google id and name in the session
-    session['google_id'] = id_info.get('sub')
-    session['name'] = id_info.get('name')
+    session['google_id'] = id_info['sub']
+    session['name'] = id_info['name']
 
     return redirect('/protected_area')
 
+@app.route('/protected_area')
+@login_is_required
+def protected_area():
+    return f'Hello {session["name"]}! <br/> <a href="/calendar"><button>View Calendar</button></a> <br/> <a href="/logout"><button>Logout</button></a>'
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
 
-
-@app.route('/')
-def index():
-    return 'Hello World <a href="/login"><button>Login</button></a>'
-
-
-@app.route('/protected_area')
+@app.route('/calendar')
 @login_is_required
-def protected_area():
-    return f'Hello {session["name"]}! <br/> <a href="/logout"><button>Logout</button></a>'
+def calendar():
+    creds_data = session.get('credentials')
+    if not creds_data:
+        return redirect('/login')
 
+    creds = google_credentials.Credentials(
+        token=creds_data['token'],
+        refresh_token=creds_data['refresh_token'],
+        token_uri=creds_data['token_uri'],
+        client_id=creds_data['client_id'],
+        client_secret=creds_data['client_secret'],
+        scopes=creds_data['scopes']
+    )
 
+    service = build('calendar', 'v3', credentials=creds)
+    events_result = service.events().list(
+        calendarId='primary', maxResults=5, singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+
+    events = events_result.get('items', [])
+    if not events:
+        return 'No upcoming events found.'
+
+    event_list = '<br/>'.join([
+        f"{e['start'].get('dateTime', e['start'].get('date'))}: {e['summary']}"
+        for e in events
+    ])
+    return f"<h3>Upcoming Events:</h3><p>{event_list}</p><a href='/protected_area'><button>Back</button></a>"
+
+# === Run ===
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

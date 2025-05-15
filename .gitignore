@@ -5,6 +5,7 @@
 # Python
 /backend/venv
 /backend/__pycache__
+/backend/client_secret.json
 *.pyc
 
 # Env & OS
