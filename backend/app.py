@@ -1,13 +1,15 @@
 import os
 import pathlib
 import requests
+import google.auth.transport.requests
 from flask import Flask, session, abort, redirect, request
 from google.oauth2 import id_token, credentials as google_credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from pip._vendor import cachecontrol
 from functools import wraps
-import google.auth.transport.requests
+from datetime import datetime, timezone
+from dateutil.parser import parse
 
 # === Flask Setup ===
 app = Flask(__name__)
@@ -116,20 +118,47 @@ def calendar():
     )
 
     service = build('calendar', 'v3', credentials=creds)
-    events_result = service.events().list(
-        calendarId='primary', maxResults=5, singleEvents=True,
-        orderBy='startTime'
-    ).execute()
+    now = datetime.utcnow().isoformat() + 'Z'
 
-    events = events_result.get('items', [])
-    if not events:
-        return 'No upcoming events found.'
+    calendar_list = service.calendarList().list().execute()
+    all_events = []
 
-    event_list = '<br/>'.join([
-        f"{e['start'].get('dateTime', e['start'].get('date'))}: {e['summary']}"
-        for e in events
-    ])
-    return f"<h3>Upcoming Events:</h3><p>{event_list}</p><a href='/protected_area'><button>Back</button></a>"
+    for calendar_entry in calendar_list.get('items', []):
+        cal_id   = calendar_entry['id']
+        cal_name = calendar_entry.get('summary', 'Unnamed Calendar')
+
+        events = service.events().list(
+            calendarId=cal_id,
+            timeMin=now,
+            maxResults=5,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute().get('items', [])
+
+        for e in events:
+            raw_start = e['start'].get('dateTime', e['start'].get('date'))
+            summary   = e.get('summary', 'No Title')
+            try:
+                parsed_start = parse(raw_start)
+                if parsed_start.tzinfo is None:
+                    parsed_start = parsed_start.replace(tzinfo=timezone.utc)
+            except Exception:
+                parsed_start = datetime.max.replace(tzinfo=timezone.utc)
+            all_events.append((parsed_start, f"[{cal_name}] {raw_start}: {summary}"))
+
+    # Sort *once* by the datetime key
+    all_events.sort(key=lambda x: x[0])
+
+    if not all_events:
+        return 'No upcoming events found across calendars.'
+
+    event_list = '<br/>'.join([item[1] for item in all_events])
+    return (
+        "<h3>Upcoming Events from All Calendars:</h3>"
+        f"<p>{event_list}</p>"
+        "<a href='/protected_area'><button>Back</button></a>"
+    )
+
 
 # === Run ===
 if __name__ == '__main__':
