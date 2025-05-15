@@ -33,9 +33,9 @@ const HomePage: React.FC = () => {
       }}
     >
       {/* Split Hero Layout */}
-      <Grid container spacing={4} alignItems="center" justifyContent="center">
+      <Grid container spacing={4} justifyContent="center">
         {/* Left: Hero & Preview */}
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ paddingTop: '10vh' }}>
           <Typography
             variant="h4"
             component="h1"
