@@ -196,167 +196,239 @@ const EventPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      {/* Event Header */}
-      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {event?.name || 'Event Details'}
-        </Typography>
+    <Container maxWidth="lg" sx={{ py: 1 }}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          {/* Event Header */}
+          <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {event?.name || 'Event Details'}
+            </Typography>
 
-        {event?.createdBy &&
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 1 }}>
-            <Chip 
-              icon={<Person />} 
-              label={`${event?.createdBy}`} 
-              color="primary" 
-              variant="outlined"
-            />
-          </Box>
-        }
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          <Chip 
-            icon={<AccessTimeIcon />} 
-            label={`${event?.timeRange?.start || '9:00 AM'} - ${event?.timeRange?.end || '5:00 PM'}`} 
-            color="secondary" 
-            variant="outlined" 
-          />
-          <Chip 
-            icon={<GroupIcon />} 
-            label={`${event?.attendees?.length || 0} Responses`} 
-            color="secondary" 
-            variant="outlined" 
-          />
-        </Box>
-        
-        <Typography variant="body1" color="text.secondary">
-          Select all time slots when you're available. Your selection will help determine the best time for everyone.
-        </Typography>
-      </Paper>
-
-      {/* Name Input */}
-      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>Your Name</Typography>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter your name"
-          style={{
-            padding: '10px',
-            fontSize: '16px',
-            color: `${theme.palette.text.primary}`,
-            borderRadius: '4px',
-            backgroundColor: `${theme.palette.background.paper}`,
-            border: `2px solid ${theme.palette.divider}`,
-            width: '100%',
-            maxWidth: '300px'
-          }}
-        />
-      </Paper>
-
-      {/* Calendar View */}
-      <Paper elevation={2} sx={{ p: 3, mb: 4, overflowX: 'auto' }}>
-        <Typography variant="h6" gutterBottom>Select Your Availability</Typography>
-        
-        <Box sx={{ 
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr',
-          gap: 2
-        }}>
-          {/* Time headers (only shown on desktop) */}
-          {!isMobile && (
-            <>
-              <Box sx={{ gridColumn: '1 / 2', mt: 7 }}>
-                {/* Empty space above time labels */}
+            {event?.createdBy &&
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 1 }}>
+                <Chip 
+                  icon={<Person />} 
+                  label={`${event?.createdBy}`} 
+                  color="primary" 
+                  variant="outlined"
+                />
               </Box>
-              <Box sx={{ 
-                gridColumn: '2 / 3', 
-                display: 'grid',
-                gridTemplateColumns: `repeat(${Object.keys(groupedByDate).length}, 1fr)`,
-                gap: 1,
-                mb: 1
-              }}>
-                {Object.keys(groupedByDate).map(date => (
-                  <Box key={date} sx={{ textAlign: 'center', p: 1 }}>
-                    <Typography variant="subtitle2">
-                      {format(new Date(date), 'EEE')}
-                    </Typography>
-                    <Typography variant="body2">
-                      {format(new Date(date), 'MMM d')}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </>
-          )}
-          
-          {/* Time labels */}
-          {!isMobile && (
-            <Box sx={{ 
-              gridColumn: '1 / 2', 
-              display: 'flex', 
-              flexDirection: 'column',
-              gap: 1 
-            }}>
-              {Array.from(new Set(timeSlots.map(slot => slot.time))).map((time, index) => (
-                <Box key={index} sx={{ 
-                  height: '40px', 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  pr: 2,
-                  fontSize: '14px'
-                }}>
-                  {time}
-                </Box>
-              ))}
+            }
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+              <Chip 
+                icon={<AccessTimeIcon />} 
+                label={`${event?.timeRange?.start || '9:00 AM'} - ${event?.timeRange?.end || '5:00 PM'}`} 
+                color="secondary" 
+                variant="outlined" 
+              />
+              <Chip 
+                icon={<GroupIcon />} 
+                label={`${event?.attendees?.length || 0} Responses`} 
+                color="secondary" 
+                variant="outlined" 
+              />
             </Box>
-          )}
-          
-          {/* Calendar Grid */}
-          <Box sx={{ 
-            gridColumn: isMobile ? '1 / 2' : '2 / 3',
-            overflowX: 'auto'
-          }}>
-            {isMobile ? (
-              // Mobile view: List by date
-              Object.entries(groupedByDate).map(([date, slots]: [string, TimeSlot[]]) => (
-                <Box key={date} sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    {format(new Date(date), 'EEEE, MMMM d')}
-                  </Typography>
-                  <Grid container spacing={1}>
-                    {slots.map((slot) => (
-                      <Grid key={slot.id} size={{ xs: 4, sm: 3 }}>
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 9 }}>
+          {/* Calendar View */}
+          <Paper elevation={2} sx={{ p: 3, mb: 4, overflowX: 'auto' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5" gutterBottom >
+                When are you free?
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              {/* Name Input */}
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                style={{
+                  padding: '10px',
+                  fontSize: '16px',
+                  color: `${theme.palette.text.primary}`,
+                  borderRadius: '4px',
+                  backgroundColor: `${theme.palette.background.paper}`,
+                  border: `2px solid ${theme.palette.divider}`,
+                  width: '100%',
+                  maxWidth: '300px'
+                }}
+              />
+
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="large"
+                disabled={isSubmitting || !name || selectedSlots.length === 0}
+                onClick={handleSubmit}
+                sx={{ minWidth: '200px' }}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Availability'}
+              </Button>
+            </Box>
+            
+            <Box sx={{ 
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'auto 1fr',
+              rowGap: 1,
+              columnGap: 2
+            }}>
+              {/* Time headers (only shown on desktop) */}
+              {!isMobile && (
+                <>
+                  <Box sx={{ gridColumn: '1 / 2', mt: 7 }}>
+                    {/* Empty space above time labels */}
+                  </Box>
+                  <Box sx={{ 
+                    gridColumn: '2 / 3', 
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${Object.keys(groupedByDate).length}, 1fr)`,
+                    gap: 1,
+                    mb: 1
+                  }}>
+                    {Object.keys(groupedByDate).map(date => (
+                      <Box key={date} sx={{ textAlign: 'center', p: 1 }}>
+                        <Typography variant="subtitle2">
+                          {format(new Date(date), 'EEE')}
+                        </Typography>
+                        <Typography variant="body2">
+                          {format(new Date(date), 'MMM d')}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </>
+              )}
+              
+              {/* Time labels */}
+              {!isMobile && (
+                <Box sx={{ 
+                  gridColumn: '1 / 2', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  gap: 1 
+                }}>
+                  {Array.from(new Set(timeSlots.map(slot => slot.time))).map((time, index) => (
+                    <Box key={index} sx={{ 
+                      height: '40px', 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      pr: 2,
+                      fontSize: '14px'
+                    }}>
+                      {time}
+                    </Box>
+                  ))}
+                </Box>
+              )}
+              
+              {/* Calendar Grid */}
+              <Box sx={{ 
+                gridColumn: isMobile ? '1 / 2' : '2 / 3',
+                overflowX: 'auto',
+                paddingTop: '18px'
+              }}>
+                {isMobile ? (
+                  // Mobile view: List by date
+                  Object.entries(groupedByDate).map(([date, slots]: [string, TimeSlot[]]) => (
+                    <Box key={date} sx={{ mb: 3 }}>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                        {format(new Date(date), 'EEEE, MMMM d')}
+                      </Typography>
+                      <Grid container spacing={1}>
+                        {slots.map((slot) => (
+                          <Grid key={slot.id} size={{ xs: 4, sm: 3 }}>
+                            <Box 
+                              onClick={() => handleSlotSelection(slot.id)}
+                              sx={{
+                                p: 1,
+                                textAlign: 'center',
+                                borderRadius: 1,
+                                cursor: 'pointer',
+                                backgroundColor: selectedSlots.includes(slot.id) 
+                                  ? theme.palette.primary.main 
+                                  : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
+                                color: selectedSlots.includes(slot.id) 
+                                  ? '#fff' 
+                                  : 'text.primary',
+                                '&:hover': {
+                                  backgroundColor: selectedSlots.includes(slot.id)
+                                    ? theme.palette.primary.dark
+                                    : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
+                                },
+                                position: 'relative'
+                              }}
+                            >
+                              {slot.time}
+                              {selectedSlots.includes(slot.id) && (
+                                <CheckCircleIcon 
+                                  sx={{ 
+                                    position: 'absolute', 
+                                    top: -8, 
+                                    right: -8, 
+                                    fontSize: 16,
+                                    backgroundColor: '#fff',
+                                    borderRadius: '50%'
+                                  }} 
+                                />
+                              )}
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                      <Divider sx={{ mt: 2 }} />
+                    </Box>
+                  ))
+                ) : (
+                  // Desktop view: Grid calendar
+                  <Box sx={{ 
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${Object.keys(groupedByDate).length}, 1fr)`,
+                    gap: 1
+                  }}>
+                    {timeSlots.map(slot => {
+                      const dateIndex = Object.keys(groupedByDate).indexOf(slot.date);
+                      const timeIndex = Array.from(
+                        new Set(timeSlots.map(s => s.time))
+                      ).indexOf(slot.time);
+                      
+                      return (
                         <Box 
+                          key={slot.id}
                           onClick={() => handleSlotSelection(slot.id)}
                           sx={{
-                            p: 1,
-                            textAlign: 'center',
+                            gridColumn: dateIndex + 1,
+                            gridRow: timeIndex + 1,
+                            height: '40px',
                             borderRadius: 1,
                             cursor: 'pointer',
                             backgroundColor: selectedSlots.includes(slot.id) 
                               ? theme.palette.primary.main 
                               : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
-                            color: selectedSlots.includes(slot.id) 
-                              ? '#fff' 
-                              : 'text.primary',
                             '&:hover': {
                               backgroundColor: selectedSlots.includes(slot.id)
                                 ? theme.palette.primary.dark
                                 : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
                             },
-                            position: 'relative'
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
                         >
-                          {slot.time}
+                          {isMobile && slot.time}
                           {selectedSlots.includes(slot.id) && (
                             <CheckCircleIcon 
                               sx={{ 
                                 position: 'absolute', 
-                                top: -8, 
-                                right: -8, 
+                                top: -5, 
+                                right: -5, 
                                 fontSize: 16,
                                 backgroundColor: '#fff',
                                 borderRadius: '50%'
@@ -364,84 +436,15 @@ const EventPage: React.FC = () => {
                             />
                           )}
                         </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                  <Divider sx={{ mt: 2 }} />
-                </Box>
-              ))
-            ) : (
-              // Desktop view: Grid calendar
-              <Box sx={{ 
-                display: 'grid',
-                gridTemplateColumns: `repeat(${Object.keys(groupedByDate).length}, 1fr)`,
-                gap: 1
-              }}>
-                {timeSlots.map(slot => {
-                  const dateIndex = Object.keys(groupedByDate).indexOf(slot.date);
-                  const timeIndex = Array.from(
-                    new Set(timeSlots.map(s => s.time))
-                  ).indexOf(slot.time);
-                  
-                  return (
-                    <Box 
-                      key={slot.id}
-                      onClick={() => handleSlotSelection(slot.id)}
-                      sx={{
-                        gridColumn: dateIndex + 1,
-                        gridRow: timeIndex + 1,
-                        height: '40px',
-                        borderRadius: 1,
-                        cursor: 'pointer',
-                        backgroundColor: selectedSlots.includes(slot.id) 
-                          ? theme.palette.primary.main 
-                          : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
-                        '&:hover': {
-                          backgroundColor: selectedSlots.includes(slot.id)
-                            ? theme.palette.primary.dark
-                            : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
-                        },
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      {isMobile && slot.time}
-                      {selectedSlots.includes(slot.id) && (
-                        <CheckCircleIcon 
-                          sx={{ 
-                            position: 'absolute', 
-                            top: -5, 
-                            right: -5, 
-                            fontSize: 16,
-                            backgroundColor: '#fff',
-                            borderRadius: '50%'
-                          }} 
-                        />
-                      )}
-                    </Box>
-                  );
-                })}
+                      );
+                    })}
+                  </Box>
+                )}
               </Box>
-            )}
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Submit Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          size="large"
-          disabled={isSubmitting || !name || selectedSlots.length === 0}
-          onClick={handleSubmit}
-          sx={{ minWidth: '200px' }}
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Availability'}
-        </Button>
-      </Box>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
     </Container>
   );
 };
