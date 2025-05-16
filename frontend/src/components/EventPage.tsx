@@ -231,6 +231,15 @@ const EventPage: React.FC = () => {
               />
             </Box>
           </Paper>
+
+          <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Import Calendar
+            </Typography>
+            <Button variant="contained" color="primary">
+              Import
+            </Button>
+          </Paper>
         </Grid>
 
         <Grid size={{ xs: 12, md: 9 }}>
