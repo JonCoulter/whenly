@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import type { PaletteMode } from '@mui/material';
 import HomePage from './components/HomePage';
+import EventPage from './components/EventPage';
 import Layout from './components/Layout';
 import { getThemeOptions } from './theme';
 
@@ -26,6 +27,7 @@ const App: React.FC = () => {
       <Layout title="Whenly" toggleTheme={toggleTheme} mode={mode}>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/e/:eventId" element={<EventPage />} />
         </Routes>
       </Layout>
     </ThemeProvider>

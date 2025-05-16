@@ -60,7 +60,7 @@ export async function createEvent(eventData: EventFormData): Promise<ApiResponse
  */
 export async function getEventById(eventId: string): Promise<ApiResponse<any>> {
   try {
-    const response = await fetch(`/api/events/${eventId}`, {
+    const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
