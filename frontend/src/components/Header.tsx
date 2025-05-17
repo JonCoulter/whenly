@@ -82,8 +82,6 @@ const Header: React.FC<HeaderProps> = ({
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            
-            
             {user ? (
               <>
                 <IconButton
@@ -111,14 +109,18 @@ const Header: React.FC<HeaderProps> = ({
                   onClose={handleMenuClose}
                   transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                  sx = {{ mt: 1 }}
                 >
-                  <MenuItem onClick={handleLogout}>
-                    <ListItemIcon>
+                  <Typography sx={{ p: 1, mb: 1, textAlign: 'center', justifyContent: 'center', fontWeight: 600 }}>
+                    {user.name}
+                  </Typography>
+                  <MenuItem onClick={handleLogout} sx={{ p: 2, pl: 1.5, textAlign: 'center', justifyContent: 'center' }}>
+                    <ListItemIcon sx={{ pl: 1, mr: 1 }}>
                       <LogoutIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText>Sign out</ListItemText>
                   </MenuItem>
-                  <MenuItem>
+                  <MenuItem sx={{ p: 1, pl: 2, textAlign: 'center', justifyContent: 'center' }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -126,6 +128,7 @@ const Header: React.FC<HeaderProps> = ({
                           onChange={toggleTheme}
                           icon={<Brightness7Icon />}
                           checkedIcon={<Brightness3Icon />}
+                          sx={{ mr: 2 }}
                         />
                       }
                       label={isDarkMode ? "Dark Mode" : "Light Mode"}

@@ -29,7 +29,8 @@ const HomePage: React.FC = () => {
       sx={{
         backgroundColor: 'background',
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        py: 3
       }}
     >
       {/* Split Hero Layout */}
