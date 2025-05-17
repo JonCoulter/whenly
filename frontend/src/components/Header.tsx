@@ -82,18 +82,7 @@ const Header: React.FC<HeaderProps> = ({
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={isDarkMode}
-                  onChange={toggleTheme}
-                  icon={<Brightness7Icon />}
-                  checkedIcon={<Brightness3Icon />}
-                />
-              }
-              label={isDarkMode ? "Dark Mode" : "Light Mode"}
-              sx={{ mr: 1 }}
-            />
+            
             
             {user ? (
               <>
@@ -120,7 +109,6 @@ const Header: React.FC<HeaderProps> = ({
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleMenuClose}
-                  onClick={handleMenuClose}
                   transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                   anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
                 >
@@ -129,6 +117,19 @@ const Header: React.FC<HeaderProps> = ({
                       <LogoutIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText>Sign out</ListItemText>
+                  </MenuItem>
+                  <MenuItem>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={isDarkMode}
+                          onChange={toggleTheme}
+                          icon={<Brightness7Icon />}
+                          checkedIcon={<Brightness3Icon />}
+                        />
+                      }
+                      label={isDarkMode ? "Dark Mode" : "Light Mode"}
+                    />
                   </MenuItem>
                 </Menu>
               </>
