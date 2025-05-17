@@ -1,21 +1,70 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Box, Container, Link, IconButton, useTheme, Button } from '@mui/material';
+import React, { useState } from 'react';
+import { 
+  AppBar, 
+  Toolbar, 
+  Typography, 
+  Box, 
+  Container, 
+  IconButton, 
+  useTheme as useMuiTheme, 
+  Button,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Snackbar,
+  Alert,
+  Switch,
+  FormControlLabel
+} from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import Brightness3Icon from '@mui/icons-material/Brightness3';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SignInModal from './SignInModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface HeaderProps {
   title?: string;
-  toggleTheme?: () => void;
-  mode?: 'light' | 'dark';
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  title = 'Whenly',
-  toggleTheme,
-  mode = 'light'
+  title = 'Whenly'
 }) => {
-  const theme = useTheme();
+  const muiTheme = useMuiTheme();
+  const { isDarkMode, toggleTheme } = useTheme();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error'
+  });
+  const { user, logout } = useAuth();
+  
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleMenuClose();
+    setSnackbar({
+      open: true,
+      message: 'Successfully logged out!',
+      severity: 'success'
+    });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
   
   return (
     <AppBar position="static" sx={{ width: '100%' }}>
@@ -32,34 +81,94 @@ const Header: React.FC<HeaderProps> = ({
             {title}
           </Typography>
           
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button 
-              variant="text" 
-              sx={{
-                color: "text.primary",
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                }}}>
-              Sign In
-            </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isDarkMode}
+                  onChange={toggleTheme}
+                  icon={<Brightness7Icon />}
+                  checkedIcon={<Brightness3Icon />}
+                />
+              }
+              label={isDarkMode ? "Dark Mode" : "Light Mode"}
+              sx={{ mr: 1 }}
+            />
             
-            {toggleTheme && (
-              <IconButton 
-                onClick={toggleTheme} 
-                sx={{ 
-                  ml: 1,
-                  color: 'text.primary',
+            {user ? (
+              <>
+                <IconButton
+                  onClick={handleMenuOpen}
+                  sx={{ 
+                    p: 0,
+                    '&:hover': {
+                      opacity: 0.8
+                    }
+                  }}
+                >
+                  <Avatar
+                    alt={user.name}
+                    src={user.picture}
+                    sx={{ 
+                      width: 42, 
+                      height: 42,
+                      border: `2px solid ${muiTheme.palette.primary.main}`
+                    }}
+                  />
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  onClick={handleMenuClose}
+                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                >
+                  <MenuItem onClick={handleLogout}>
+                    <ListItemIcon>
+                      <LogoutIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Sign out</ListItemText>
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Button 
+                variant="text" 
+                onClick={() => setIsSignInModalOpen(true)}
+                sx={{
+                  color: "text.primary",
                   '&:hover': {
-                    color: theme.palette.primary.main,
+                    color: muiTheme.palette.primary.main,
                   }
-                }}
-              >
-                {mode === 'dark' ? <Brightness7Icon /> : <Brightness3Icon />}
-              </IconButton>
+                }}>
+                Sign In
+              </Button>
             )}
           </Box>
         </Toolbar>
       </Container>
+
+      <SignInModal 
+        open={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        title={title}
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleSnackbarClose} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </AppBar>
   );
 };

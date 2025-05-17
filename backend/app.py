@@ -28,10 +28,19 @@ def create_app(config_name='default'):
     db.init_app(app)
     
     # Configure CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, 
+         resources={r"/api/*": {
+             "origins": app.config['CORS_ORIGINS'],
+             "supports_credentials": app.config['CORS_SUPPORTS_CREDENTIALS'],
+             "allow_headers": ["Content-Type"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+         }},
+         supports_credentials=app.config['CORS_SUPPORTS_CREDENTIALS']
+    )
     
     # Allows http traffic for local development
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    if app.config['DEBUG']:
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
     
     # === OAuth Setup ===
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
@@ -44,10 +53,13 @@ def create_app(config_name='default'):
         'https://www.googleapis.com/auth/calendar.readonly'
     ]
     
+    # Configure OAuth redirect URI based on environment
+    redirect_uri = os.environ.get('OAUTH_REDIRECT_URI', 'http://localhost:5000/api/callback')
+    
     flow = Flow.from_client_secrets_file(
         client_secrets_file=client_secrets_file,
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/callback'
+        redirect_uri=redirect_uri
     )
     
     # === Auth Decorator ===
@@ -64,13 +76,17 @@ def create_app(config_name='default'):
     def index():
         return 'Hello World <a href="/login"><button>Login</button></a>'
     
-    @app.route('/login')
+    @app.route('/api/login')
     def login():
+        # Store the referrer URL in the session
+        referrer = request.referrer or '/'
+        session['redirect_after_login'] = referrer
+        
         authorization_url, state = flow.authorization_url(prompt='consent')
         session['state'] = state
         return redirect(authorization_url)
     
-    @app.route('/callback')
+    @app.route('/api/callback')
     def callback():
         flow.fetch_token(authorization_response=request.url)
     
@@ -100,20 +116,28 @@ def create_app(config_name='default'):
             audience=GOOGLE_CLIENT_ID
         )
     
+        # Store user information in session
         session['google_id'] = id_info['sub']
         session['name'] = id_info['name']
-    
-        return redirect('/protected_area')
+        session['email'] = id_info.get('email', '')
+        session['picture'] = id_info.get('picture', '')
+        
+        # Get the stored redirect URL or default to home
+        redirect_url = session.pop('redirect_after_login', '/')
+        return redirect(redirect_url)
     
     @app.route('/protected_area')
     @login_is_required
     def protected_area():
         return f'Hello {session["name"]}! <br/> <a href="/calendar"><button>View Calendar</button></a> <br/> <a href="/logout"><button>Logout</button></a>'
     
-    @app.route('/logout')
+    @app.route('/api/logout')
     def logout():
         session.clear()
-        return redirect('/')
+        return jsonify({
+            "success": True,
+            "message": "Successfully logged out"
+        })
     
     @app.route('/calendar')
     @login_is_required
@@ -172,6 +196,27 @@ def create_app(config_name='default'):
             f"<p>{event_list}</p>"
             "<a href='/protected_area'><button>Back</button></a>"
         )
+    
+    @app.route('/api/auth/status')
+    def auth_status():
+        """Check if user is authenticated and return user info if they are"""
+        if 'google_id' not in session:
+            return jsonify({
+                "authenticated": False
+            })
+        
+        # Get user info from session
+        user_info = {
+            "authenticated": True,
+            "user": {
+                "name": session.get('name'),
+                "googleId": session.get('google_id'),
+                "email": session.get('email', ''),  # Add email if available
+                "picture": session.get('picture', '')  # Add picture if available
+            }
+        }
+        
+        return jsonify(user_info)
     
     # === Event API Routes ===
     @app.route('/api/events/create', methods=['POST'])

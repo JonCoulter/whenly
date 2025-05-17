@@ -206,7 +206,7 @@ const EventPage: React.FC = () => {
             </Typography>
 
             {event?.createdBy &&
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 1 }}>
+              <Box sx={{ mb: 1 }}>
                 <Chip 
                   icon={<Person />} 
                   label={`${event?.createdBy}`} 
@@ -216,7 +216,7 @@ const EventPage: React.FC = () => {
               </Box>
             }
             
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
               <Chip 
                 icon={<AccessTimeIcon />} 
                 label={`${event?.timeRange?.start || '9:00 AM'} - ${event?.timeRange?.end || '5:00 PM'}`} 

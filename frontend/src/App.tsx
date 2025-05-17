@@ -1,37 +1,27 @@
-import React, { useState, useMemo } from 'react';
-import { Routes, Route } from "react-router-dom";
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import type { PaletteMode } from '@mui/material';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CssBaseline } from '@mui/material';
+import Header from './components/Header';
 import HomePage from './components/HomePage';
 import EventPage from './components/EventPage';
-import Layout from './components/Layout';
-import { getThemeOptions } from './theme';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
-const App: React.FC = () => {
-  const [mode, setMode] = useState<PaletteMode>('light');
-  
-  // Create theme based on current mode using our theme configuration
-  const theme = useMemo(
-    () => createTheme(getThemeOptions(mode)),
-    [mode]
-  );
-
-  // Toggle theme function
-  const toggleTheme = () => {
-    setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
-  };
-
+function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Layout title="Whenly" toggleTheme={toggleTheme} mode={mode}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/e/:eventId" element={<EventPage />} />
-        </Routes>
-      </Layout>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <CssBaseline />
+          <Header />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/e/:eventId" element={<EventPage />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
-};
+}
 
 export default App;
