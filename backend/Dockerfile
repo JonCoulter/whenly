@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Copy project files
 COPY . /app
+COPY manage.py /app/manage.py
 
 # Install dependencies
 RUN pip install --upgrade pip

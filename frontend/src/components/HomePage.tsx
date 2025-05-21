@@ -30,7 +30,7 @@ const HomePage: React.FC = () => {
         backgroundColor: 'background',
         display: 'flex',
         justifyContent: 'center',
-        py: 3
+        py: 3,
       }}
     >
       {/* Split Hero Layout */}

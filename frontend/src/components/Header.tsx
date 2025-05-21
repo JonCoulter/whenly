@@ -71,7 +71,9 @@ const Header: React.FC<HeaderProps> = ({
       <Container maxWidth="lg">
         <Toolbar sx={{ flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <Typography 
-            variant="h5" 
+            variant="h5"
+            component={RouterLink}
+            to="/"
             sx={{ 
               textDecoration: 'none', 
               color: 'text.primary',

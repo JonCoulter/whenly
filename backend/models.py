@@ -1,11 +1,19 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from datetime import datetime
 import json
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 def init_app(app):
     db.init_app(app)
+    migrate.init_app(app, db)
+    
+    @app.before_first_request
+    def create_tables():
+        """Create database tables before first request"""
+        db.create_all()
 
 class Event(db.Model):
     """
@@ -21,7 +29,8 @@ class Event(db.Model):
     specific_days = db.Column(db.Text)  # JSON string of dates ['YYYY-MM-DD', ...]
     days_of_week = db.Column(db.Text)   # JSON string of days ['Monday', 'Wednesday', ...]
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.String(255))  # User ID or email of creator
+    created_by = db.Column(db.String(255))  # User email of creator
+    creator_name = db.Column(db.String(255))  # Name of the creator
     
     # Relationships
     availability_slots = db.relationship('AvailabilitySlot', backref='event', lazy=True, cascade="all, delete-orphan")
@@ -40,7 +49,8 @@ class Event(db.Model):
             'specificDays': json.loads(self.specific_days or '[]'),
             'daysOfWeek': json.loads(self.days_of_week or '[]'),
             'createdAt': self.created_at.isoformat() if self.created_at else None,
-            'createdBy': self.created_by
+            'createdBy': self.created_by,
+            'creatorName': self.creator_name
         }
 
 
@@ -96,14 +106,4 @@ class Response(db.Model):
             'userName': self.user_name,
             'isAvailable': self.is_available,
             'createdAt': self.created_at.isoformat() if self.created_at else None
-        }
-
-
-def init_app(app):
-    """Initialize the database with the given Flask app"""
-    db.init_app(app)
-    
-    @app.before_first_request
-    def create_tables():
-        """Create database tables before first request"""
-        db.create_all() 
+        } 

@@ -227,6 +227,7 @@ def create_app(config_name='default'):
         {
             "eventName": "Event Name",
             "eventType": "specificDays" | "daysOfWeek",
+            "createdBy": "user@email.com",
             "timeRange": {
                 "start": "09:00 AM",
                 "end": "05:00 PM"
@@ -244,7 +245,7 @@ def create_app(config_name='default'):
             if not data or not isinstance(data, dict):
                 return jsonify({"success": False, "message": "Invalid request data"}), 400
             
-            required_fields = ['eventName', 'eventType', 'timeRange']
+            required_fields = ['eventName', 'eventType', 'timeRange', 'createdBy']
             for field in required_fields:
                 if field not in data:
                     return jsonify({"success": False, "message": f"Missing required field: {field}"}), 400
@@ -260,6 +261,9 @@ def create_app(config_name='default'):
             if event_type == 'daysOfWeek' and ('daysOfWeek' not in data or not data['daysOfWeek']):
                 return jsonify({"success": False, "message": "daysOfWeek is required for this event type"}), 400
             
+            # Get creator's name from session
+            creator_name = data['creatorName'] if 'creatorName' in data else 'Anonymous'
+            
             # Generate a unique ID for the event
             event_id = str(uuid.uuid4())
             created_at = datetime.now()
@@ -274,7 +278,8 @@ def create_app(config_name='default'):
                 specific_days=json.dumps(data.get('specificDays', [])) if event_type == 'specificDays' else None,
                 days_of_week=json.dumps(data.get('daysOfWeek', [])) if event_type == 'daysOfWeek' else None,
                 created_at=created_at,
-                created_by=session.get('google_id', 'anonymous')
+                created_by=data['createdBy'],
+                creator_name=creator_name
             )
             db.session.add(new_event)
             
@@ -300,29 +305,21 @@ def create_app(config_name='default'):
                     
             db.session.commit()
             
-            event_data = {
-                "id": event_id,
-                "name": data['eventName'],
-                "eventType": event_type,
-                "timeRange": data['timeRange'],
-                "specificDays": data.get('specificDays', []),
-                "daysOfWeek": data.get('daysOfWeek', []),
-                "createdAt": created_at.isoformat()
-            }
-            
             return jsonify({
                 "success": True,
                 "message": "Event created successfully",
-                "data": event_data
+                "data": {
+                    "eventId": event_id,
+                    "event": new_event.to_dict()
+                }
             }), 201
-        
+            
         except Exception as e:
-            # In a real app with database, would rollback the session
-            # db.session.rollback()
-            app.logger.error(f"Error creating event: {str(e)}")
+            db.session.rollback()
+            print(f"Error creating event: {str(e)}")
             return jsonify({
                 "success": False,
-                "message": f"Server error: {str(e)}"
+                "message": f"Failed to create event: {str(e)}"
             }), 500
     
     @app.route('/api/events/<event_id>', methods=['GET'])

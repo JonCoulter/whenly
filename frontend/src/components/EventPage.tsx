@@ -205,11 +205,11 @@ const EventPage: React.FC = () => {
               {event?.name || 'Event Details'}
             </Typography>
 
-            {event?.createdBy &&
+            {event?.creatorName &&
               <Box sx={{ mb: 1 }}>
                 <Chip 
                   icon={<Person />} 
-                  label={`${event?.createdBy}`} 
+                  label={`${event?.creatorName}`} 
                   color="primary" 
                   variant="outlined"
                 />

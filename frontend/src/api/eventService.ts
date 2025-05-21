@@ -6,6 +6,8 @@
 export interface EventFormData {
   eventName: string;
   eventType: 'specificDays' | 'daysOfWeek';
+  createdBy: string;
+  creatorName: string;
   timeRange: {
     start: string;
     end: string;

@@ -24,6 +24,7 @@ import './DayPickerStyles.css';
 import { format } from 'date-fns';
 import { createEvent } from '../../api/eventService';
 import type { EventFormData } from '../../api/eventService';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Define time options for dropdowns
 const timeOptions = [
@@ -39,6 +40,7 @@ interface EventFormProps {
 
 const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
   const theme = useTheme();
+  const { user } = useAuth();
   const [eventType, setEventType] = useState<'specificDays' | 'daysOfWeek'>('specificDays');
   const [eventName, setEventName] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -51,6 +53,11 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      setSubmitError('Please sign in to create an event');
+      return;
+    }
     
     if (eventName.trim() === '') {
       setSubmitError('Please enter an event name');
@@ -75,6 +82,8 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
     const formData: EventFormData = {
       eventName,
       eventType,
+      createdBy: user.email,
+      creatorName: user.name,
       timeRange: {
         start: startTime,
         end: endTime
