@@ -12,13 +12,17 @@ import {
   Alert,
   Divider,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Snackbar,
+  Switch,
+  FormControlLabel,
+  Tooltip
 } from '@mui/material';
 import { format, parse, addMinutes, isSameDay } from 'date-fns';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { getEventById } from '../api/eventService';
+import { getEventById, submitAvailability, getEventResponses } from '../api/eventService';
 import { Person } from '@mui/icons-material';
 
 // Types
@@ -27,6 +31,7 @@ interface TimeSlot {
   date: string;
   time: string;
   dateObj: Date;
+  availableUsers?: string[];
 }
 
 interface GroupedSlots {
@@ -42,61 +47,111 @@ const EventPage: React.FC = () => {
   const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [name, setName] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [responses, setResponses] = useState<{
+    totalResponses: number;
+    uniqueUsers: number;
+    responses: any[];
+  } | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+  const [showOthersAvailability, setShowOthersAvailability] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Fetch event data
+  // Fetch event data and responses
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchData = async () => {
       if (!eventId) return;
       
       setIsLoading(true);
-      const response = await getEventById(eventId);
-      
-      if (response.success && response.data) {
-        // The actual event data is nested inside response.data.data
-        if (response.data.data) {
-          setEvent(response.data.data);
+      try {
+        const [eventResponse, responsesData] = await Promise.all([
+          getEventById(eventId),
+          getEventResponses(eventId)
+        ]);
+        
+        if (eventResponse.success && eventResponse.data) {
+          setEvent(eventResponse.data.data || eventResponse.data);
         } else {
-          setEvent(response.data);
+          setError(eventResponse.error || 'Failed to load event');
         }
-      } else {
-        setError(response.error || 'Failed to load event');
+        
+        setResponses(responsesData);
+      } catch (err) {
+        setError('Failed to load event data');
+        console.error('Error loading event:', err);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
 
-    fetchEvent();
+    fetchData();
   }, [eventId]);
 
   const handleSlotSelection = (slot: string) => {
     setSelectedSlots(prev => {
-      // If already selected, remove it
       if (prev.includes(slot)) {
         return prev.filter(s => s !== slot);
-      } 
-      // Otherwise add it
+      }
       return [...prev, slot];
     });
   };
 
   const handleSubmit = async () => {
     if (!name || selectedSlots.length === 0) {
-      setError('Please enter your name and select at least one time slot');
+      setSnackbar({
+        open: true,
+        message: 'Please enter your name and select at least one time slot',
+        severity: 'error'
+      });
       return;
     }
 
     setIsSubmitting(true);
-    // TODO: Implement API call to save availability
-    console.log('Submitting availability for', name, selectedSlots);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Format the selected slots to match the expected format
+      const formattedSlots = selectedSlots.map(slotId => {
+        // Split into date and time parts, handling the format "YYYY-MM-DD-HH:mm"
+        const parts = slotId.split('-');
+        const date = parts.slice(0, 3).join('-');  // Join YYYY-MM-DD
+        const time = parts[3];  // Get HH:mm
+        return `${date}-${time}`;
+      });
+
+      await submitAvailability(eventId!, {
+        userName: name,
+        selectedSlots: formattedSlots
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Your availability has been saved!',
+        severity: 'success'
+      });
+
+      // Refresh responses
+      const responsesData = await getEventResponses(eventId!);
+      setResponses(responsesData);
+
+      // Reset form
+      setName('');
+      setSelectedSlots([]);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: 'Failed to submit availability',
+        severity: 'error'
+      });
+    } finally {
       setIsSubmitting(false);
-      // Show success message
-      alert('Your availability has been saved!');
-    }, 1000);
+    }
   };
 
   // Generate time slots for the calendar
@@ -118,6 +173,8 @@ const EventPage: React.FC = () => {
         dates.push(format(date, 'yyyy-MM-dd'));
       }
     }
+
+    console.log(dates);
     
     // Generate time slots
     dates.forEach((date: string) => {
@@ -154,8 +211,10 @@ const EventPage: React.FC = () => {
       let current = start;
       while (current < end) {
         const formattedTime = format(current, 'HH:mm');
+        // Create slot ID in the format "YYYY-MM-DD-HH:mm"
+        const slotId = `${date}-${formattedTime}`;
         slots.push({
-          id: `${date}-${formattedTime}`,
+          id: slotId,
           date,
           time: formattedTime,
           dateObj: parse(`${date} ${formattedTime}`, 'yyyy-MM-dd HH:mm', new Date())
@@ -177,6 +236,31 @@ const EventPage: React.FC = () => {
     acc[slot.date].push(slot);
     return acc;
   }, {} as GroupedSlots);
+
+  // Add this function to process responses into slot availability
+  const processResponses = (slots: TimeSlot[]): TimeSlot[] => {
+    if (!responses?.responses) return slots;
+
+    // Create a map of slot IDs to available users
+    const slotAvailability = new Map<string, string[]>();
+    
+    responses.responses.forEach(response => {
+      // Get the slot ID from the response
+      const slotId = response.slotId;
+      const users = slotAvailability.get(slotId) || [];
+      users.push(response.userName);
+      slotAvailability.set(slotId, users);
+    });
+
+    // Update slots with availability information
+    return slots.map(slot => ({
+      ...slot,
+      availableUsers: slotAvailability.get(slot.id) || []
+    }));
+  };
+
+  // Process slots with availability data
+  const processedTimeSlots = showOthersAvailability ? processResponses(timeSlots) : timeSlots;
 
   if (isLoading) {
     return (
@@ -225,7 +309,7 @@ const EventPage: React.FC = () => {
               />
               <Chip 
                 icon={<GroupIcon />} 
-                label={`${event?.attendees?.length || 0} Responses`} 
+                label={`${responses?.uniqueUsers || 0} Responses`} 
                 color="secondary" 
                 variant="outlined" 
               />
@@ -245,10 +329,20 @@ const EventPage: React.FC = () => {
         <Grid size={{ xs: 12, md: 9 }}>
           {/* Calendar View */}
           <Paper elevation={2} sx={{ p: 3, mb: 4, overflowX: 'auto' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h5" gutterBottom >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5">
                 When are you free?
               </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showOthersAvailability}
+                    onChange={(e) => setShowOthersAvailability(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Show others' availability"
+              />
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               {/* Name Input */}
@@ -351,45 +445,60 @@ const EventPage: React.FC = () => {
                         {format(new Date(date), 'EEEE, MMMM d')}
                       </Typography>
                       <Grid container spacing={1}>
-                        {slots.map((slot) => (
-                          <Grid key={slot.id} size={{ xs: 4, sm: 3 }}>
-                            <Box 
-                              onClick={() => handleSlotSelection(slot.id)}
-                              sx={{
-                                p: 1,
-                                textAlign: 'center',
-                                borderRadius: 1,
-                                cursor: 'pointer',
-                                backgroundColor: selectedSlots.includes(slot.id) 
-                                  ? theme.palette.primary.main 
-                                  : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
-                                color: selectedSlots.includes(slot.id) 
-                                  ? '#fff' 
-                                  : 'text.primary',
-                                '&:hover': {
-                                  backgroundColor: selectedSlots.includes(slot.id)
-                                    ? theme.palette.primary.dark
-                                    : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
-                                },
-                                position: 'relative'
-                              }}
-                            >
-                              {slot.time}
-                              {selectedSlots.includes(slot.id) && (
-                                <CheckCircleIcon 
-                                  sx={{ 
-                                    position: 'absolute', 
-                                    top: -8, 
-                                    right: -8, 
-                                    fontSize: 16,
-                                    backgroundColor: '#fff',
-                                    borderRadius: '50%'
-                                  }} 
-                                />
-                              )}
-                            </Box>
-                          </Grid>
-                        ))}
+                        {slots.map((slot) => {
+                          const availableCount = slot.availableUsers?.length || 0;
+                          const intensity = Math.min(availableCount / 5, 1); // Normalize to 0-1, max at 5 people
+                          
+                          return (
+                            <Grid key={slot.id} size={{ xs: 4, sm: 3 }}>
+                              <Tooltip 
+                                title={
+                                  slot.availableUsers?.length ? 
+                                  `Available: ${slot.availableUsers.join(', ')}` : 
+                                  'No one available'
+                                }
+                              >
+                                <Box 
+                                  onClick={() => handleSlotSelection(slot.id)}
+                                  sx={{
+                                    p: 1,
+                                    textAlign: 'center',
+                                    borderRadius: 1,
+                                    cursor: 'pointer',
+                                    backgroundColor: selectedSlots.includes(slot.id) 
+                                      ? theme.palette.primary.main 
+                                      : showOthersAvailability && availableCount > 0
+                                        ? `rgba(25, 118, 210, ${0.2 + (intensity * 0.6)})` // Blue with varying opacity
+                                        : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
+                                    color: selectedSlots.includes(slot.id) 
+                                      ? '#fff' 
+                                      : 'text.primary',
+                                    '&:hover': {
+                                      backgroundColor: selectedSlots.includes(slot.id)
+                                        ? theme.palette.primary.dark
+                                        : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
+                                    },
+                                    position: 'relative'
+                                  }}
+                                >
+                                  {slot.time}
+                                  {selectedSlots.includes(slot.id) && (
+                                    <CheckCircleIcon 
+                                      sx={{ 
+                                        position: 'absolute', 
+                                        top: -8, 
+                                        right: -8, 
+                                        fontSize: 16,
+                                        backgroundColor: '#fff',
+                                        borderRadius: '50%'
+                                      }} 
+                                    />
+                                  )}
+                                </Box>
+                              </Tooltip>
+                            </Grid>
+                          );
+                        })}
                       </Grid>
                       <Divider sx={{ mt: 2 }} />
                     </Box>
@@ -401,50 +510,63 @@ const EventPage: React.FC = () => {
                     gridTemplateColumns: `repeat(${Object.keys(groupedByDate).length}, 1fr)`,
                     gap: 1
                   }}>
-                    {timeSlots.map(slot => {
+                    {processedTimeSlots.map(slot => {
                       const dateIndex = Object.keys(groupedByDate).indexOf(slot.date);
                       const timeIndex = Array.from(
-                        new Set(timeSlots.map(s => s.time))
+                        new Set(processedTimeSlots.map(s => s.time))
                       ).indexOf(slot.time);
                       
+                      const availableCount = slot.availableUsers?.length || 0;
+                      const intensity = Math.min(availableCount / 5, 1); // Normalize to 0-1, max at 5 people
+                      
                       return (
-                        <Box 
+                        <Tooltip 
                           key={slot.id}
-                          onClick={() => handleSlotSelection(slot.id)}
-                          sx={{
-                            gridColumn: dateIndex + 1,
-                            gridRow: timeIndex + 1,
-                            height: '40px',
-                            borderRadius: 1,
-                            cursor: 'pointer',
-                            backgroundColor: selectedSlots.includes(slot.id) 
-                              ? theme.palette.primary.main 
-                              : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
-                            '&:hover': {
-                              backgroundColor: selectedSlots.includes(slot.id)
-                                ? theme.palette.primary.dark
-                                : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
-                            },
-                            position: 'relative',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
+                          title={
+                            slot.availableUsers?.length ? 
+                            `Available: ${slot.availableUsers.join(', ')}` : 
+                            'No one available'
+                          }
                         >
-                          {isMobile && slot.time}
-                          {selectedSlots.includes(slot.id) && (
-                            <CheckCircleIcon 
-                              sx={{ 
-                                position: 'absolute', 
-                                top: -5, 
-                                right: -5, 
-                                fontSize: 16,
-                                backgroundColor: '#fff',
-                                borderRadius: '50%'
-                              }} 
-                            />
-                          )}
-                        </Box>
+                          <Box 
+                            onClick={() => handleSlotSelection(slot.id)}
+                            sx={{
+                              gridColumn: dateIndex + 1,
+                              gridRow: timeIndex + 1,
+                              height: '40px',
+                              borderRadius: 1,
+                              cursor: 'pointer',
+                              backgroundColor: selectedSlots.includes(slot.id) 
+                                ? theme.palette.primary.main 
+                                : showOthersAvailability && availableCount > 0
+                                  ? `rgba(25, 118, 210, ${0.2 + (intensity * 0.6)})` // Blue with varying opacity
+                                  : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
+                              '&:hover': {
+                                backgroundColor: selectedSlots.includes(slot.id)
+                                  ? theme.palette.primary.dark
+                                  : theme.palette.mode === 'light' ? '#D1D5DB' : '#4B5563'
+                              },
+                              position: 'relative',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            {isMobile && slot.time}
+                            {selectedSlots.includes(slot.id) && (
+                              <CheckCircleIcon 
+                                sx={{ 
+                                  position: 'absolute', 
+                                  top: -5, 
+                                  right: -5, 
+                                  fontSize: 16,
+                                  backgroundColor: '#fff',
+                                  borderRadius: '50%'
+                                }} 
+                              />
+                            )}
+                          </Box>
+                        </Tooltip>
                       );
                     })}
                   </Box>
@@ -454,6 +576,20 @@ const EventPage: React.FC = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

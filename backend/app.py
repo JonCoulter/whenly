@@ -344,6 +344,129 @@ def create_app(config_name='default'):
                 "message": f"Server error: {str(e)}"
             }), 500
     
+    @app.route('/api/events/<event_id>/availability', methods=['POST'])
+    def submit_availability(event_id):
+        """
+        Submit availability for an event
+        Expected payload:
+        {
+            "userName": "John Doe",
+            "userId": "user@email.com",  # Optional
+            "selectedSlots": ["2024-03-20-09:00", "2024-03-20-09:30", ...]
+        }
+        """
+        try:
+            # Get JSON data from request
+            data = request.json
+            
+            # Basic validation
+            if not data or not isinstance(data, dict):
+                return jsonify({"success": False, "message": "Invalid request data"}), 400
+            
+            required_fields = ['userName', 'selectedSlots']
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({"success": False, "message": f"Missing required field: {field}"}), 400
+            
+            # Get event and validate it exists
+            event = Event.query.filter_by(id=event_id).first()
+            if not event:
+                return jsonify({"success": False, "message": "Event not found"}), 404
+            
+            # Get or create availability slots
+            for slot_id in data['selectedSlots']:
+                # Parse the slot ID (format: "YYYY-MM-DD-HH:mm")
+                parts = slot_id.split('-')
+                date_str = '-'.join(parts[:3])  # Join YYYY-MM-DD
+                time_str = parts[3]  # Get HH:mm
+                
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                
+                # Find or create the slot
+                slot = AvailabilitySlot.query.filter_by(
+                    event_id=event_id,
+                    date=date,
+                    start_time=time_str
+                ).first()
+                
+                if not slot:
+                    # Create new slot if it doesn't exist
+                    slot = AvailabilitySlot(
+                        event_id=event_id,
+                        date=date,
+                        start_time=time_str,
+                        end_time=time_str  # You might want to calculate this based on slot duration
+                    )
+                    db.session.add(slot)
+                    db.session.flush()  # Get the slot ID
+                
+                # Create response
+                response = Response(
+                    event_id=event_id,
+                    slot_id=slot.id,
+                    user_id=data.get('userId'),
+                    user_name=data['userName'],
+                    is_available=True
+                )
+                db.session.add(response)
+            
+            db.session.commit()
+            
+            return jsonify({
+                "success": True,
+                "message": "Availability submitted successfully"
+            }), 201
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error submitting availability: {str(e)}")
+            return jsonify({
+                "success": False,
+                "message": f"Failed to submit availability: {str(e)}"
+            }), 500
+
+    @app.route('/api/events/<event_id>/responses', methods=['GET'])
+    def get_event_responses(event_id):
+        """Get all responses for an event"""
+        try:
+            # Get event and validate it exists
+            event = Event.query.filter_by(id=event_id).first()
+            if not event:
+                return jsonify({"success": False, "message": "Event not found"}), 404
+            
+            # Get unique users who have responded
+            unique_users = db.session.query(Response.user_name).filter_by(event_id=event_id).distinct().count()
+            
+            # Get all responses with slot information
+            responses = db.session.query(Response, AvailabilitySlot).join(
+                AvailabilitySlot,
+                Response.slot_id == AvailabilitySlot.id
+            ).filter(Response.event_id == event_id).all()
+            
+            # Format response data
+            formatted_responses = []
+            for response, slot in responses:
+                response_data = response.to_dict()
+                # Add slot information
+                response_data['slotId'] = f"{slot.date}-{slot.start_time}"
+                formatted_responses.append(response_data)
+            
+            return jsonify({
+                "success": True,
+                "data": {
+                    "totalResponses": len(formatted_responses),
+                    "uniqueUsers": unique_users,
+                    "responses": formatted_responses
+                }
+            }), 200
+            
+        except Exception as e:
+            print(f"Error getting responses: {str(e)}")
+            return jsonify({
+                "success": False,
+                "message": f"Failed to get responses: {str(e)}"
+            }), 500
+    
     # Create database tables
     with app.app_context():
         db.create_all()

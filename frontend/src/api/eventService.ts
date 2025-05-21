@@ -89,4 +89,53 @@ export async function getEventById(eventId: string): Promise<ApiResponse<any>> {
       error: error instanceof Error ? error.message : 'An unknown error occurred'
     };
   }
-} 
+}
+
+export const submitAvailability = async (eventId: string, data: {
+  userName: string;
+  userId?: string;
+  selectedSlots: string[];
+}): Promise<ApiResponse<void>> => {
+  try {
+
+    console.log(data);
+    
+    const response = await fetch(`http://localhost:5000/api/events/${eventId}/availability`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to submit availability');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error submitting availability:', error);
+    throw error;
+  }
+};
+
+export const getEventResponses = async (eventId: string): Promise<{
+  totalResponses: number;
+  uniqueUsers: number;
+  responses: any[];
+}> => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/events/${eventId}/responses`);
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to get responses');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Error getting responses:', error);
+    throw error;
+  }
+}; 
