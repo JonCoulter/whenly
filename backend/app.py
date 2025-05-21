@@ -352,7 +352,9 @@ def create_app(config_name='default'):
         {
             "userName": "John Doe",
             "userId": "user@email.com",  # Optional
-            "selectedSlots": ["2024-03-20-09:00", "2024-03-20-09:30", ...]
+            "selectedSlots": ["Monday-09:00", "Monday-09:30", ...] for daysOfWeek events
+            OR
+            "selectedSlots": ["2024-03-20-09:00", "2024-03-20-09:30", ...] for specificDays events
         }
         """
         try:
@@ -375,30 +377,54 @@ def create_app(config_name='default'):
             
             # Get or create availability slots
             for slot_id in data['selectedSlots']:
-                # Parse the slot ID (format: "YYYY-MM-DD-HH:mm")
-                parts = slot_id.split('-')
-                date_str = '-'.join(parts[:3])  # Join YYYY-MM-DD
-                time_str = parts[3]  # Get HH:mm
-                
-                date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                
-                # Find or create the slot
-                slot = AvailabilitySlot.query.filter_by(
-                    event_id=event_id,
-                    date=date,
-                    start_time=time_str
-                ).first()
-                
-                if not slot:
-                    # Create new slot if it doesn't exist
-                    slot = AvailabilitySlot(
+                if event.event_type == 'daysOfWeek':
+                    # Parse the slot ID (format: "DAY-HH:mm")
+                    # Handle potential -undefined suffix
+                    clean_slot_id = slot_id.split('-undefined')[0]
+                    day_of_week, time_str = clean_slot_id.split('-')
+                    
+                    # Find or create the slot
+                    slot = AvailabilitySlot.query.filter_by(
+                        event_id=event_id,
+                        day_of_week=day_of_week,
+                        start_time=time_str
+                    ).first()
+                    
+                    if not slot:
+                        # Create new slot if it doesn't exist
+                        slot = AvailabilitySlot(
+                            event_id=event_id,
+                            day_of_week=day_of_week,
+                            start_time=time_str,
+                            end_time=time_str  # You might want to calculate this based on slot duration
+                        )
+                        db.session.add(slot)
+                        db.session.flush()  # Get the slot ID
+                else:  # specificDays event
+                    # Parse the slot ID (format: "YYYY-MM-DD-HH:mm")
+                    parts = slot_id.split('-')
+                    date_str = '-'.join(parts[:3])  # Join YYYY-MM-DD
+                    time_str = parts[3]  # Get HH:mm
+                    
+                    date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    
+                    # Find or create the slot
+                    slot = AvailabilitySlot.query.filter_by(
                         event_id=event_id,
                         date=date,
-                        start_time=time_str,
-                        end_time=time_str  # You might want to calculate this based on slot duration
-                    )
-                    db.session.add(slot)
-                    db.session.flush()  # Get the slot ID
+                        start_time=time_str
+                    ).first()
+                    
+                    if not slot:
+                        # Create new slot if it doesn't exist
+                        slot = AvailabilitySlot(
+                            event_id=event_id,
+                            date=date,
+                            start_time=time_str,
+                            end_time=time_str  # You might want to calculate this based on slot duration
+                        )
+                        db.session.add(slot)
+                        db.session.flush()  # Get the slot ID
                 
                 # Create response
                 response = Response(
@@ -447,8 +473,11 @@ def create_app(config_name='default'):
             formatted_responses = []
             for response, slot in responses:
                 response_data = response.to_dict()
-                # Add slot information
-                response_data['slotId'] = f"{slot.date}-{slot.start_time}"
+                # Add slot information based on event type
+                if event.event_type == 'daysOfWeek':
+                    response_data['slotId'] = f"{slot.day_of_week}-{slot.start_time}"
+                else:
+                    response_data['slotId'] = f"{slot.date}-{slot.start_time}"
                 formatted_responses.append(response_data)
             
             return jsonify({

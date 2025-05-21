@@ -28,9 +28,10 @@ import { Person } from '@mui/icons-material';
 // Types
 interface TimeSlot {
   id: string;
-  date: string;
+  date?: string;  // Optional for specificDays events
+  dayOfWeek?: string;  // For daysOfWeek events
   time: string;
-  dateObj: Date;
+  dateObj?: Date;  // Optional since daysOfWeek events don't need specific dates
   availableUsers?: string[];
 }
 
@@ -118,7 +119,12 @@ const EventPage: React.FC = () => {
     try {
       // Format the selected slots to match the expected format
       const formattedSlots = selectedSlots.map(slotId => {
-        // Split into date and time parts, handling the format "YYYY-MM-DD-HH:mm"
+        // For days of week events, just use the slot ID as is
+        if (event.eventType === 'daysOfWeek') {
+          return slotId.split('-undefined')[0]; // Remove any -undefined suffix
+        }
+        
+        // For specific days events, format as before
         const parts = slotId.split('-');
         const date = parts.slice(0, 3).join('-');  // Join YYYY-MM-DD
         const time = parts[3];  // Get HH:mm
@@ -159,81 +165,98 @@ const EventPage: React.FC = () => {
     if (!event) return [];
     
     const slots: TimeSlot[] = [];
-    const dates: string[] = [];
     
-    // For demo, generate some dates
+    // Handle different event types
     if (event.eventType === 'specificDays' && event.specificDays) {
-      dates.push(...event.specificDays);
-    } else {
-      // Default to next 5 days if no specific days
-      const today = new Date();
-      for (let i = 1; i <= 5; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        dates.push(format(date, 'yyyy-MM-dd'));
-      }
-    }
-
-    console.log(dates);
-    
-    // Generate time slots
-    dates.forEach((date: string) => {
-      // Handle both "HH:mm" and "hh:mm a" time formats
-      let startTime = event.timeRange?.start || '09:00';
-      let endTime = event.timeRange?.end || '17:00';
-      
-      // Convert "hh:mm a" format (like "09:00 AM") to "HH:mm" format (like "09:00")
-      if (startTime.includes('AM') || startTime.includes('PM')) {
-        const [time, period] = startTime.split(' ');
-        const [hours, minutes] = time.split(':').map(Number);
-        let hour24 = hours;
+      // For specific days events, use the provided dates
+      event.specificDays.forEach((date: string) => {
+        // Handle both "HH:mm" and "hh:mm a" time formats
+        let startTime = event.timeRange?.start || '09:00';
+        let endTime = event.timeRange?.end || '17:00';
         
-        if (period === 'PM' && hours < 12) hour24 += 12;
-        if (period === 'AM' && hours === 12) hour24 = 0;
-        
-        startTime = `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      }
-      
-      if (endTime.includes('AM') || endTime.includes('PM')) {
-        const [time, period] = endTime.split(' ');
-        const [hours, minutes] = time.split(':').map(Number);
-        let hour24 = hours;
-        
-        if (period === 'PM' && hours < 12) hour24 += 12;
-        if (period === 'AM' && hours === 12) hour24 = 0;
-        
-        endTime = `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      }
-      
-      const start = parse(startTime, 'HH:mm', new Date());
-      const end = parse(endTime, 'HH:mm', new Date());
-      
-      let current = start;
-      while (current < end) {
-        const formattedTime = format(current, 'HH:mm');
-        // Create slot ID in the format "YYYY-MM-DD-HH:mm"
-        const slotId = `${date}-${formattedTime}`;
-        slots.push({
-          id: slotId,
-          date,
-          time: formattedTime,
-          dateObj: parse(`${date} ${formattedTime}`, 'yyyy-MM-dd HH:mm', new Date())
+        // Convert time formats
+        [startTime, endTime] = [startTime, endTime].map(time => {
+          if (time.includes('AM') || time.includes('PM')) {
+            const [t, period] = time.split(' ');
+            const [hours, minutes] = t.split(':').map(Number);
+            let hour24 = hours;
+            
+            if (period === 'PM' && hours < 12) hour24 += 12;
+            if (period === 'AM' && hours === 12) hour24 = 0;
+            
+            return `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          }
+          return time;
         });
-        current = addMinutes(current, 30); // 30-minute slots
-      }
-    });
+        
+        const start = parse(startTime, 'HH:mm', new Date());
+        const end = parse(endTime, 'HH:mm', new Date());
+        
+        let current = start;
+        while (current < end) {
+          const formattedTime = format(current, 'HH:mm');
+          // Create slot ID in the format "YYYY-MM-DD-HH:mm"
+          const slotId = `${date}-${formattedTime}`;
+          slots.push({
+            id: slotId,
+            date,
+            time: formattedTime,
+            dateObj: parse(`${date} ${formattedTime}`, 'yyyy-MM-dd HH:mm', new Date())
+          });
+          current = addMinutes(current, 30); // 30-minute slots
+        }
+      });
+    } else if (event.eventType === 'daysOfWeek' && event.daysOfWeek) {
+      // For days of week events, create slots for each day without specific dates
+      event.daysOfWeek.forEach((dayOfWeek: string) => {
+        let startTime = event.timeRange?.start || '09:00';
+        let endTime = event.timeRange?.end || '17:00';
+        
+        // Convert time formats
+        [startTime, endTime] = [startTime, endTime].map(time => {
+          if (time.includes('AM') || time.includes('PM')) {
+            const [t, period] = time.split(' ');
+            const [hours, minutes] = t.split(':').map(Number);
+            let hour24 = hours;
+            
+            if (period === 'PM' && hours < 12) hour24 += 12;
+            if (period === 'AM' && hours === 12) hour24 = 0;
+            
+            return `${hour24.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          }
+          return time;
+        });
+        
+        const start = parse(startTime, 'HH:mm', new Date());
+        const end = parse(endTime, 'HH:mm', new Date());
+        
+        let current = start;
+        while (current < end) {
+          const formattedTime = format(current, 'HH:mm');
+          // Create slot ID in the format "DAY-HH:mm"
+          const slotId = `${dayOfWeek}-${formattedTime}`;
+          slots.push({
+            id: slotId,
+            dayOfWeek,
+            time: formattedTime
+          });
+          current = addMinutes(current, 30); // 30-minute slots
+        }
+      });
+    }
     
     return slots;
   };
 
   const timeSlots = generateTimeSlots();
   
-  // Group time slots by date for the calendar view
+  // Group time slots by date or day of week
   const groupedByDate = timeSlots.reduce((acc: GroupedSlots, slot) => {
-    if (!acc[slot.date]) {
-      acc[slot.date] = [];
+    const key = slot.date || slot.dayOfWeek || '';
+    if (!acc[key]) {
+      acc[key] = [];
     }
-    acc[slot.date].push(slot);
+    acc[key].push(slot);
     return acc;
   }, {} as GroupedSlots);
 
@@ -394,14 +417,16 @@ const EventPage: React.FC = () => {
                     gap: 1,
                     mb: 1
                   }}>
-                    {Object.keys(groupedByDate).map(date => (
-                      <Box key={date} sx={{ textAlign: 'center', p: 1 }}>
+                    {Object.keys(groupedByDate).map(key => (
+                      <Box key={key} sx={{ textAlign: 'center', p: 1 }}>
                         <Typography variant="subtitle2">
-                          {format(new Date(date), 'EEE')}
+                          {event.eventType === 'daysOfWeek' ? key : format(new Date(key), 'EEE')}
                         </Typography>
-                        <Typography variant="body2">
-                          {format(new Date(date), 'MMM d')}
-                        </Typography>
+                        {event.eventType === 'specificDays' && (
+                          <Typography variant="body2">
+                            {format(new Date(key), 'MMM d')}
+                          </Typography>
+                        )}
                       </Box>
                     ))}
                   </Box>
@@ -511,7 +536,7 @@ const EventPage: React.FC = () => {
                     gap: 1
                   }}>
                     {processedTimeSlots.map(slot => {
-                      const dateIndex = Object.keys(groupedByDate).indexOf(slot.date);
+                      const dateIndex = Object.keys(groupedByDate).indexOf(slot.date || '');
                       const timeIndex = Array.from(
                         new Set(processedTimeSlots.map(s => s.time))
                       ).indexOf(slot.time);
@@ -539,7 +564,7 @@ const EventPage: React.FC = () => {
                               backgroundColor: selectedSlots.includes(slot.id) 
                                 ? theme.palette.primary.main 
                                 : showOthersAvailability && availableCount > 0
-                                  ? `rgba(25, 118, 210, ${0.2 + (intensity * 0.6)})` // Blue with varying opacity
+                                  ? `rgba(25, 118, 210, ${0.1 + (intensity * 0.9)})` // Blue with varying opacity
                                   : theme.palette.mode === 'light' ? '#E5E7EB' : '#374151',
                               '&:hover': {
                                 backgroundColor: selectedSlots.includes(slot.id)

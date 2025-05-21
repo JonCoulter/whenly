@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { createEvent } from '../../api/eventService';
 import type { EventFormData } from '../../api/eventService';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // Define time options for dropdowns
 const timeOptions = [
@@ -41,6 +42,7 @@ interface EventFormProps {
 const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
   const theme = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [eventType, setEventType] = useState<'specificDays' | 'daysOfWeek'>('specificDays');
   const [eventName, setEventName] = useState('');
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -115,6 +117,8 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
           setSelectedDates([]);
           setSelectedDaysOfWeek([]);
         }
+        // Redirect to new event page
+        navigate(`/e/${result.data.data.eventId}`);
       } else {
         setSubmitError(result.error || 'Failed to create event');
         console.error('Error creating event:', result.error);
