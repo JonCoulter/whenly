@@ -72,10 +72,6 @@ def create_app(config_name='default'):
         return wrapper
     
     # === Routes ===
-    @app.route('/')
-    def index():
-        return 'Hello World <a href="/login"><button>Login</button></a>'
-    
     @app.route('/api/login')
     def login():
         # Store the referrer URL in the session
@@ -127,11 +123,6 @@ def create_app(config_name='default'):
         redirect_url = session.pop('redirect_after_login', '/')
         return redirect(redirect_url)
     
-    @app.route('/protected_area')
-    @login_is_required
-    def protected_area():
-        return f'Hello {session["name"]}! <br/> <a href="/calendar"><button>View Calendar</button></a> <br/> <a href="/logout"><button>Logout</button></a>'
-    
     @app.route('/api/logout')
     def logout():
         session.clear()
@@ -139,64 +130,6 @@ def create_app(config_name='default'):
             "success": True,
             "message": "Successfully logged out"
         })
-    
-    @app.route('/calendar')
-    @login_is_required
-    def calendar():
-        creds_data = session.get('credentials')
-        if not creds_data:
-            return redirect('/login')
-    
-        creds = google_credentials.Credentials(
-            token=creds_data['token'],
-            refresh_token=creds_data['refresh_token'],
-            token_uri=creds_data['token_uri'],
-            client_id=creds_data['client_id'],
-            client_secret=creds_data['client_secret'],
-            scopes=creds_data['scopes']
-        )
-    
-        service = build('calendar', 'v3', credentials=creds)
-        now = datetime.now(timezone.utc).isoformat()
-    
-        calendar_list = service.calendarList().list().execute()
-        all_events = []
-    
-        for calendar_entry in calendar_list.get('items', []):
-            cal_id   = calendar_entry['id']
-            cal_name = calendar_entry.get('summary', 'Unnamed Calendar')
-    
-            events = service.events().list(
-                calendarId=cal_id,
-                timeMin=now,
-                maxResults=5,
-                singleEvents=True,
-                orderBy='startTime'
-            ).execute().get('items', [])
-    
-            for e in events:
-                raw_start = e['start'].get('dateTime', e['start'].get('date'))
-                summary   = e.get('summary', 'No Title')
-                try:
-                    parsed_start = parse(raw_start)
-                    if parsed_start.tzinfo is None:
-                        parsed_start = parsed_start.replace(tzinfo=timezone.utc)
-                except Exception:
-                    parsed_start = datetime.max.replace(tzinfo=timezone.utc)
-                all_events.append((parsed_start, f"[{cal_name}] {raw_start}: {summary}"))
-    
-        # Sort *once* by the datetime key
-        all_events.sort(key=lambda x: x[0])
-    
-        if not all_events:
-            return 'No upcoming events found across calendars.'
-    
-        event_list = '<br/>'.join([item[1] for item in all_events])
-        return (
-            "<h3>Upcoming Events from All Calendars:</h3>"
-            f"<p>{event_list}</p>"
-            "<a href='/protected_area'><button>Back</button></a>"
-        )
     
     @app.route('/api/auth/status')
     def auth_status():
