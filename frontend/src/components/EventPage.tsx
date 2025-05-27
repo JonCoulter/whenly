@@ -26,6 +26,8 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { getEventById, submitAvailability, getEventResponses } from '../api/eventService';
 import { Person } from '@mui/icons-material';
 import config from '../config';
+import { useAuth } from '../contexts/AuthContext';
+import SignInModal from './SignInModal';
 
 // Types
 interface TimeSlot {
@@ -73,8 +75,10 @@ const EventPage: React.FC = () => {
   });
   const [showOthersAvailability, setShowOthersAvailability] = useState<boolean>(false);
   const [isImporting, setIsImporting] = useState<boolean>(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { user } = useAuth();
 
   // Fetch event data and responses
   useEffect(() => {
@@ -304,6 +308,11 @@ const EventPage: React.FC = () => {
   // Add function to fetch calendar events
   const fetchCalendarEvents = async () => {
     if (!event) return;
+    
+    if (!user) {
+      setIsSignInModalOpen(true);
+      return;
+    }
     
     setIsImporting(true);
     try {
@@ -785,6 +794,12 @@ const EventPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <SignInModal 
+        open={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        title={'Whenly'}
+      />
     </Container>
   );
 };

@@ -81,6 +81,7 @@ def create_app(config_name='default'):
         # Store the referrer URL in the session
         referrer = request.referrer or '/'
         session['redirect_after_login'] = referrer
+        print(session['redirect_after_login'])
         
         authorization_url, state = flow.authorization_url(prompt='consent')
         session['state'] = state
