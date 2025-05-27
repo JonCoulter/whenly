@@ -218,6 +218,115 @@ def create_app(config_name='default'):
         
         return jsonify(user_info)
     
+    @app.route('/api/calendar/events', methods=['GET'])
+    @login_is_required
+    def get_calendar_events():
+        """Get calendar events for a specific date range"""
+        try:
+            # Get date range from query parameters
+            start_date = request.args.get('startDate')
+            end_date = request.args.get('endDate')
+            
+            if not start_date or not end_date:
+                return jsonify({
+                    "success": False,
+                    "message": "startDate and endDate are required"
+                }), 400
+            
+            # Get credentials from session
+            creds_data = session.get('credentials')
+            if not creds_data:
+                return jsonify({
+                    "success": False,
+                    "message": "Not authenticated with Google Calendar"
+                }), 401
+            
+            # Create credentials object
+            creds = google_credentials.Credentials(
+                token=creds_data['token'],
+                refresh_token=creds_data['refresh_token'],
+                token_uri=creds_data['token_uri'],
+                client_id=creds_data['client_id'],
+                client_secret=creds_data['client_secret'],
+                scopes=creds_data['scopes']
+            )
+            
+            # Build calendar service
+            service = build('calendar', 'v3', credentials=creds)
+            
+            # Get calendar list
+            calendar_list = service.calendarList().list().execute()
+            all_events = []
+            
+            # Convert dates to ISO format
+            time_min = f"{start_date}T00:00:00Z"
+            time_max = f"{end_date}T23:59:59Z"
+            
+            # Fetch events from each calendar
+            for calendar_entry in calendar_list.get('items', []):
+                cal_id = calendar_entry['id']
+                cal_name = calendar_entry.get('summary', 'Unnamed Calendar')
+                
+                # # Skip task calendars
+                # if 'tasks' in cal_name.lower():
+                #     continue
+                
+                events = service.events().list(
+                    calendarId=cal_id,
+                    timeMin=time_min,
+                    timeMax=time_max,
+                    singleEvents=True,
+                    orderBy='startTime'
+                ).execute().get('items', [])
+                
+                for event in events:
+                    # # Skip all-day events and tasks
+                    # if 'date' in event['start'] or event.get('eventType') == 'default':
+                    #     continue
+                    
+                    # Get event start and end times
+                    start = event['start'].get('dateTime')
+                    end = event['end'].get('dateTime')
+                    
+                    # Skip if no specific time (all-day event)
+                    if not start or not end:
+                        continue
+                    
+                    # Parse dates
+                    try:
+                        start_dt = parse(start)
+                        end_dt = parse(end)
+                        
+                        # Convert to local time if needed
+                        if start_dt.tzinfo is None:
+                            start_dt = start_dt.replace(tzinfo=timezone.utc)
+                        if end_dt.tzinfo is None:
+                            end_dt = end_dt.replace(tzinfo=timezone.utc)
+                        
+                        all_events.append({
+                            'summary': event.get('summary', 'No Title'),
+                            'start': start_dt.isoformat(),
+                            'end': end_dt.isoformat(),
+                            'calendar': cal_name
+                        })
+                    except Exception as e:
+                        print(f"Error parsing event date: {str(e)}")
+                        continue
+            
+            return jsonify({
+                "success": True,
+                "data": {
+                    "events": all_events
+                }
+            }), 200
+            
+        except Exception as e:
+            print(f"Error fetching calendar events: {str(e)}")
+            return jsonify({
+                "success": False,
+                "message": f"Failed to fetch calendar events: {str(e)}"
+            }), 500
+    
     # === Event API Routes ===
     @app.route('/api/events/create', methods=['POST'])
     def create_event():

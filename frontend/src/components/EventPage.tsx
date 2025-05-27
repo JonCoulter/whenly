@@ -18,12 +18,14 @@ import {
   FormControlLabel,
   Tooltip
 } from '@mui/material';
-import { format, parse, addMinutes, isSameDay } from 'date-fns';
+import { format, parse, addMinutes, isSameDay, parseISO, isWithinInterval, addDays } from 'date-fns';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { getEventById, submitAvailability, getEventResponses } from '../api/eventService';
 import { Person } from '@mui/icons-material';
+import config from '../config';
 
 // Types
 interface TimeSlot {
@@ -33,6 +35,13 @@ interface TimeSlot {
   time: string;
   dateObj?: Date;  // Optional since daysOfWeek events don't need specific dates
   availableUsers?: string[];
+}
+
+interface CalendarEvent {
+  summary: string;
+  start: string;
+  end: string;
+  calendar: string;
 }
 
 interface GroupedSlots {
@@ -63,6 +72,7 @@ const EventPage: React.FC = () => {
     severity: 'success'
   });
   const [showOthersAvailability, setShowOthersAvailability] = useState<boolean>(false);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -197,11 +207,17 @@ const EventPage: React.FC = () => {
           const formattedTime = format(current, 'HH:mm');
           // Create slot ID in the format "YYYY-MM-DD-HH:mm"
           const slotId = `${date}-${formattedTime}`;
+          
+          // Create date object in local timezone
+          const [year, month, day] = date.split('-').map(Number);
+          const [hours, minutes] = formattedTime.split(':').map(Number);
+          const dateObj = new Date(year, month - 1, day, hours, minutes);
+          
           slots.push({
             id: slotId,
             date,
             time: formattedTime,
-            dateObj: parse(`${date} ${formattedTime}`, 'yyyy-MM-dd HH:mm', new Date())
+            dateObj
           });
           current = addMinutes(current, 30); // 30-minute slots
         }
@@ -285,6 +301,154 @@ const EventPage: React.FC = () => {
   // Process slots with availability data
   const processedTimeSlots = showOthersAvailability ? processResponses(timeSlots) : timeSlots;
 
+  // Add function to fetch calendar events
+  const fetchCalendarEvents = async () => {
+    if (!event) return;
+    
+    setIsImporting(true);
+    try {
+      // Get date range based on event type
+      let startDate, endDate;
+      
+      if (event.eventType === 'specificDays' && event.specificDays?.length > 0) {
+        startDate = event.specificDays[0];
+        endDate = event.specificDays[event.specificDays.length - 1];
+      } else {
+        // For days of week events, use next 2 weeks
+        const today = new Date();
+        startDate = format(today, 'yyyy-MM-dd');
+        endDate = format(addDays(today, 14), 'yyyy-MM-dd');
+      }
+      
+      const response = await fetch(
+        `${config.apiUrl}/api/calendar/events?startDate=${startDate}&endDate=${endDate}`,
+        { credentials: 'include' }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch calendar events');
+      }
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message);
+      }
+      
+      // Process calendar events and update selected slots
+      const calendarEvents = data.data.events as CalendarEvent[];
+      console.log('Calendar Events:', calendarEvents);
+      const newSelectedSlots = new Set(selectedSlots);
+      
+      // For each time slot in our event
+      timeSlots.forEach(slot => {
+        // Create a date object for the slot's start time
+        let slotStart: Date;
+        if (slot.dateObj) {
+          slotStart = slot.dateObj;
+        } else if (slot.date) {
+          // For specific days events, create date in local timezone
+          const [year, month, day] = slot.date.split('-').map(Number);
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          slotStart = new Date(year, month - 1, day, hours, minutes);
+        } else {
+          // For days of week events, use today's date
+          const today = new Date();
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          slotStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+        }
+        
+        const slotEnd = addMinutes(slotStart, 30); // 30-minute slots
+        
+        console.log(`\nChecking slot: ${slot.id}`);
+        console.log('Slot start:', slotStart.toISOString());
+        console.log('Slot end:', slotEnd.toISOString());
+        
+        // Check if this slot overlaps with any calendar event
+        const hasOverlap = calendarEvents.some(event => {
+          // Parse the ISO dates with timezone information
+          const eventStart = new Date(event.start);
+          const eventEnd = new Date(event.end);
+          
+          console.log(`\nComparing with event: ${event.summary}`);
+          console.log('Event start:', eventStart.toISOString());
+          console.log('Event end:', eventEnd.toISOString());
+          
+          // Convert all dates to UTC for comparison
+          const slotStartUTC = new Date(Date.UTC(
+            slotStart.getFullYear(),
+            slotStart.getMonth(),
+            slotStart.getDate(),
+            slotStart.getHours(),
+            slotStart.getMinutes()
+          ));
+          
+          const slotEndUTC = new Date(Date.UTC(
+            slotEnd.getFullYear(),
+            slotEnd.getMonth(),
+            slotEnd.getDate(),
+            slotEnd.getHours(),
+            slotEnd.getMinutes()
+          ));
+          
+          const eventStartUTC = new Date(Date.UTC(
+            eventStart.getFullYear(),
+            eventStart.getMonth(),
+            eventStart.getDate(),
+            eventStart.getHours(),
+            eventStart.getMinutes()
+          ));
+          
+          const eventEndUTC = new Date(Date.UTC(
+            eventEnd.getFullYear(),
+            eventEnd.getMonth(),
+            eventEnd.getDate(),
+            eventEnd.getHours(),
+            eventEnd.getMinutes()
+          ));
+          
+          console.log('Slot start (UTC):', slotStartUTC.toISOString());
+          console.log('Slot end (UTC):', slotEndUTC.toISOString());
+          console.log('Event start (UTC):', eventStartUTC.toISOString());
+          console.log('Event end (UTC):', eventEndUTC.toISOString());
+          
+          const overlaps = (
+            (slotStartUTC >= eventStartUTC && slotStartUTC < eventEndUTC) || // Slot starts during event
+            (slotEndUTC > eventStartUTC && slotEndUTC <= eventEndUTC) || // Slot ends during event
+            (slotStartUTC <= eventStartUTC && slotEndUTC >= eventEndUTC) // Slot completely contains event
+          );
+          
+          console.log('Overlaps:', overlaps);
+          return overlaps;
+        });
+        
+        // If no overlap, mark the slot as available
+        if (!hasOverlap) {
+          newSelectedSlots.add(slot.id);
+        }
+        else {
+          newSelectedSlots.delete(slot.id);
+        }
+      });
+      
+      setSelectedSlots(Array.from(newSelectedSlots));
+      
+      setSnackbar({
+        open: true,
+        message: 'Calendar events imported successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error importing calendar events:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to import calendar events',
+        severity: 'error'
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
@@ -343,8 +507,14 @@ const EventPage: React.FC = () => {
             <Typography variant="h6" gutterBottom>
               Import Calendar
             </Typography>
-            <Button variant="contained" color="primary">
-              Import
+            <Button 
+              variant="contained" 
+              color="primary"
+              startIcon={<CalendarMonthIcon />}
+              onClick={fetchCalendarEvents}
+              disabled={isImporting}
+            >
+              {isImporting ? 'Importing...' : 'Google Calendar'}
             </Button>
           </Paper>
         </Grid>
@@ -420,11 +590,11 @@ const EventPage: React.FC = () => {
                     {Object.keys(groupedByDate).map(key => (
                       <Box key={key} sx={{ textAlign: 'center', p: 1 }}>
                         <Typography variant="subtitle2">
-                          {event.eventType === 'daysOfWeek' ? key : format(new Date(key), 'EEE')}
+                          {event.eventType === 'daysOfWeek' ? key : format(new Date(key + 'T00:00:00'), 'EEE')}
                         </Typography>
                         {event.eventType === 'specificDays' && (
                           <Typography variant="body2">
-                            {format(new Date(key), 'MMM d')}
+                            {format(new Date(key + 'T00:00:00'), 'MMM d')}
                           </Typography>
                         )}
                       </Box>
@@ -467,7 +637,7 @@ const EventPage: React.FC = () => {
                   Object.entries(groupedByDate).map(([date, slots]: [string, TimeSlot[]]) => (
                     <Box key={date} sx={{ mb: 3 }}>
                       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                        {format(new Date(date), 'EEEE, MMMM d')}
+                        {format(new Date(date + 'T00:00:00'), 'EEEE, MMMM d')}
                       </Typography>
                       <Grid container spacing={1}>
                         {slots.map((slot) => {
