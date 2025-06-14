@@ -714,6 +714,25 @@ const EventPage: React.FC = () => {
               >
                 Copy link
               </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
+                startIcon={<CalendarMonthIcon />}
+                onClick={fetchCalendarEvents}
+                disabled={isImporting}
+                sx={{
+                  textTransform: "none",
+                  borderColor: "divider",
+                  color: "text.secondary",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    backgroundColor: "transparent",
+                  },
+                }}
+              >
+                {isImporting ? "Importing..." : "Import from Google Calendar"}
+              </Button>
               {editingMyAvailability ? (
                 <Button
                   variant="contained"
