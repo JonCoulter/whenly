@@ -1,6 +1,6 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
-import { format, parse } from 'date-fns';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import { Box, Typography } from '@mui/material';
+import { format, parse, addMinutes } from 'date-fns';
 
 interface TimeSlot {
   id: string;
@@ -18,10 +18,13 @@ interface AvailabilityGridProps {
   event: any;
   groupedByDate: GroupedSlots;
   selectedSlots: string[];
-  setSelectedSlots: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedSlots?: React.Dispatch<React.SetStateAction<string[]>>;
   showOthersAvailability: boolean;
   processedTimeSlots: TimeSlot[];
   theme: any;
+  onSlotHover: (slotId: string, availableUsers: string[], time: string, dayLabel: string) => void;
+  onSlotLeave: () => void;
+  onRequireEdit?: () => void;
 }
 
 // Helper to get hour from 'HH:mm'
@@ -30,6 +33,127 @@ function getHourLabel(time: string) {
   return format(date, 'h a');
 }
 
+// Height of one cell (px)
+const cellHeight = 18;
+
+// Memoized Grid Cell Component
+interface GridCellProps {
+  cell: { slotId: string; availableUsers: string[]; time: string; };
+  isSelected: boolean;
+  isBeingDragged: boolean;
+  dragMode: 'select' | 'deselect' | null;
+  showOthersAvailability: boolean;
+  theme: any;
+  onMouseDown: (e: React.MouseEvent) => void;
+  onMouseEnter: () => void;
+  colIdx: number;
+  rowIdx: number;
+  daysLength: number;
+  grid: { slotId: string; availableUsers: string[]; time: string; }[][];
+  selectedSlotsSet: Set<string>;
+  isSelectable: boolean;
+  days: string[];
+  onSlotHover: (slotId: string, availableUsers: string[], time: string, dayLabel: string) => void;
+  onSlotLeave: () => void;
+  event: any;
+}
+
+const GridCell: React.FC<GridCellProps> = React.memo(({
+  cell,
+  isSelected,
+  isBeingDragged,
+  dragMode,
+  showOthersAvailability,
+  theme,
+  onMouseDown,
+  onMouseEnter,
+  colIdx,
+  rowIdx,
+  daysLength,
+  grid,
+  selectedSlotsSet,
+  isSelectable,
+  days,
+  onSlotHover,
+  onSlotLeave,
+  event,
+}) => {
+  const availableCount = cell.availableUsers.length;
+  const intensity = Math.min(availableCount / 5, 1);
+  
+  let bgColor = theme.palette.background.paper;
+  if (isBeingDragged && dragMode === 'select') {
+    bgColor = theme.palette.primary.light;
+  } else if (isBeingDragged && dragMode === 'deselect') {
+    bgColor = theme.palette.action.selected;
+  } else if (isSelected && !showOthersAvailability) {
+    bgColor = theme.palette.primary.main;
+  } else if (showOthersAvailability && availableCount > 0) {
+    bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.7})`;
+  }
+
+  // Border logic for outline/merge
+  let border: React.CSSProperties = {};
+  if (showOthersAvailability && isSelected) {
+    const isAboveSelected = rowIdx > 0 && selectedSlotsSet.has(grid[rowIdx - 1][colIdx].slotId);
+    const isBelowSelected = rowIdx < grid.length - 1 && selectedSlotsSet.has(grid[rowIdx + 1][colIdx].slotId);
+    const isLastRow = rowIdx === grid.length - 1;
+    const isLastCol = colIdx === daysLength - 1;
+    const is30MinIncrement = rowIdx > 0 && rowIdx % 2 === 0;
+    border = {
+      borderLeft: '2px solid ' + theme.palette.primary.main,
+      borderRight: isLastCol ? '2px solid ' + theme.palette.primary.main : '2px solid ' + theme.palette.primary.main,
+      borderBottom: isBelowSelected ? 'none' : (isLastRow ? '2px solid ' + theme.palette.primary.main : '2px solid ' + theme.palette.primary.main),
+      borderTop:
+        is30MinIncrement
+          ? (isAboveSelected ? '1px solid ' + theme.palette.divider : '2px solid ' + theme.palette.primary.main)
+          : (isAboveSelected ? 'none' : '2px solid ' + theme.palette.primary.main),
+    };
+  } else {
+    // Add gray divider borders for non-selected cells
+    border = {
+      borderLeft: '1px solid ' + theme.palette.divider,
+      borderRight: '1px solid ' + theme.palette.divider,
+      borderTop: rowIdx > 0 && rowIdx % 2 === 0 ? '1px solid ' + theme.palette.divider : 'none',
+    };
+  }
+
+  return (
+    <Box
+      onMouseDown={onMouseDown}
+      onMouseEnter={() => {
+        onMouseEnter();
+        const dayLabel = event?.eventType === 'daysOfWeek' ? days[colIdx] : format(new Date(days[colIdx] + 'T00:00:00'), 'MMM d, EEE');
+        onSlotHover(cell.slotId, cell.availableUsers, cell.time, dayLabel);
+      }}
+      onMouseLeave={() => {
+        onSlotLeave();
+      }}
+      sx={{
+        ...border,
+        height: cellHeight + 'px',
+        width: '100%',
+        backgroundColor: bgColor,
+        color: isSelected && !showOthersAvailability ? '#fff' : theme.palette.text.primary,
+        cursor: isSelectable ? 'pointer' : 'default',
+        transition: 'background 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 13,
+        userSelect: 'none',
+        '&:hover': {
+          backgroundColor: isSelected && !showOthersAvailability
+            ? theme.palette.primary.dark
+            : theme.palette.mode === 'light'
+              ? '#D1D5DB'
+              : '#4B5563'
+        },
+      }}
+    />
+  );
+});
+
 const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   event,
   groupedByDate,
@@ -37,59 +161,83 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   setSelectedSlots,
   showOthersAvailability,
   processedTimeSlots,
-  theme
+  theme,
+  onSlotHover,
+  onSlotLeave,
+  onRequireEdit,
 }) => {
   // Days (columns)
-  const days = Object.keys(groupedByDate);
+  let days = Object.keys(groupedByDate);
+  if (event?.eventType === 'specificDays') {
+    days = days.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  } else if (event?.eventType === 'daysOfWeek') {
+    const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    days = days.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+  }
 
   // Build time labels (rows) from processedTimeSlots
-  let minTime: string | null = null;
-  let maxTime: string | null = null;
-  processedTimeSlots.forEach(slot => {
-    if (!minTime || slot.time < minTime) minTime = slot.time;
-    if (!maxTime || slot.time > maxTime) maxTime = slot.time;
-  });
-  function generateTimeLabels(start: string, end: string) {
+  const timeLabels = useMemo(() => {
+    let minTime: string | null = null;
+    let maxTime: string | null = null;
+    processedTimeSlots.forEach(slot => {
+      if (!minTime || slot.time < minTime) minTime = slot.time;
+      if (!maxTime || slot.time > maxTime) maxTime = slot.time;
+    });
+
+    if (!minTime || !maxTime) return [];
+
     const times: string[] = [];
-    let current = parse(start, 'HH:mm', new Date());
-    const endTime = parse(end, 'HH:mm', new Date());
-    while (current <= endTime) {
+    let current = parse(minTime, 'HH:mm', new Date());
+    // Ensure we go up to but not including the end time of the last slot interval
+    const lastSlotStartTime = parse(maxTime, 'HH:mm', new Date()); 
+    while (current < lastSlotStartTime) {
       times.push(format(current, 'HH:mm'));
-      current = new Date(current.getTime() + 15 * 60000);
+      current = addMinutes(current, 15);
     }
+    // Add the last slot start time itself
+    times.push(format(lastSlotStartTime, 'HH:mm'));
+
     return times;
-  }
-  const timeLabels = minTime && maxTime ? generateTimeLabels(minTime, maxTime) : [];
+  }, [processedTimeSlots]);
 
   // Build a map for quick lookup of available users
-  const slotAvailabilityMap = new Map<string, string[]>();
-  processedTimeSlots.forEach(slot => {
-    if (slot.availableUsers) {
-      slotAvailabilityMap.set(slot.id, slot.availableUsers);
-    }
-  });
+  const slotAvailabilityMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    processedTimeSlots.forEach(slot => {
+      if (slot.availableUsers) {
+        map.set(slot.id, slot.availableUsers);
+      }
+    });
+    return map;
+  }, [processedTimeSlots]);
 
-  // Build 2D grid: grid[timeIdx][dayIdx] = { slotId, availableUsers }
-  const grid: { slotId: string; availableUsers: string[] }[][] = timeLabels.map(time =>
-    days.map(day => {
-      const slotId = `${day}-${time}`;
-      return {
-        slotId,
-        availableUsers: slotAvailabilityMap.get(slotId) || []
-      };
-    })
-  );
+  // Build 2D grid: grid[timeIdx][dayIdx] = { slotId, availableUsers, time }
+  const grid = useMemo(() => {
+    return timeLabels.map(time =>
+      days.map(day => {
+        const slotId = `${day}-${time}`;
+        return {
+          slotId,
+          availableUsers: slotAvailabilityMap.get(slotId) || [],
+          time,
+        };
+      })
+    );
+  }, [timeLabels, days, slotAvailabilityMap]);
 
   // Build hour label info: [{ label: '9 AM', rowIdx: 0 }, ...]
-  const hourLabels: { label: string; rowIdx: number }[] = [];
-  let lastHour = '';
-  timeLabels.forEach((time, idx) => {
-    const hour = format(parse(time, 'HH:mm', new Date()), 'H');
-    if (hour !== lastHour) {
-      hourLabels.push({ label: getHourLabel(time), rowIdx: idx });
-      lastHour = hour;
-    }
-  });
+  const hourLabels = useMemo(() => {
+    const labels: { label: string; rowIdx: number }[] = [];
+    let lastHour = '';
+    timeLabels.forEach((time, idx) => {
+      const hour = format(parse(time, 'HH:mm', new Date()), 'H');
+      if (hour !== lastHour) {
+        labels.push({ label: getHourLabel(time), rowIdx: idx });
+        lastHour = hour;
+      }
+    });
+    return labels;
+  }, [timeLabels]);
 
   // --- Click and drag selection state ---
   const [isDragging, setIsDragging] = useState(false);
@@ -99,35 +247,40 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Helper: get all cells between two points (inclusive, straight line)
-  function getCellsBetween(
-    start: { row: number; col: number },
-    end: { row: number; col: number }
-  ): { row: number; col: number }[] {
-    const cells: { row: number; col: number }[] = [];
-    const rowStep = start.row === end.row ? 0 : start.row < end.row ? 1 : -1;
-    const colStep = start.col === end.col ? 0 : start.col < end.col ? 1 : -1;
-    let row = start.row, col = start.col;
-    cells.push({ row, col });
-    while (row !== end.row || col !== end.col) {
-      if (row !== end.row) row += rowStep;
-      if (col !== end.col) col += colStep;
+  const getCellsBetween = useCallback(
+    (
+      start: { row: number; col: number },
+      end: { row: number; col: number }
+    ): { row: number; col: number }[] => {
+      const cells: { row: number; col: number }[] = [];
+      const rowStep = start.row === end.row ? 0 : start.row < end.row ? 1 : -1;
+      const colStep = start.col === end.col ? 0 : start.col < end.col ? 1 : -1;
+      let row = start.row, col = start.col;
       cells.push({ row, col });
-    }
-    return cells;
-  }
+      while (row !== end.row || col !== end.col) {
+        if (row !== end.row) row += rowStep;
+        if (col !== end.col) col += colStep;
+        cells.push({ row, col });
+      }
+      return cells;
+    },
+    []
+  );
 
   // Mouse up handler (global)
   useEffect(() => {
     const handleMouseUp = () => {
       if (isDragging && dragMode) {
-        setSelectedSlots(prev => {
-          const newSet = new Set(prev);
-          draggedSlots.forEach(slotId => {
-            if (dragMode === 'select') newSet.add(slotId);
-            else newSet.delete(slotId);
+        if (setSelectedSlots) {
+          setSelectedSlots(prev => {
+            const newSet = new Set(prev);
+            draggedSlots.forEach(slotId => {
+              if (dragMode === 'select') newSet.add(slotId);
+              else newSet.delete(slotId);
+            });
+            return Array.from(newSet);
           });
-          return Array.from(newSet);
-        });
+        }
         setIsDragging(false);
         setDragMode(null);
         setDraggedSlots(new Set());
@@ -138,14 +291,23 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [isDragging, dragMode, draggedSlots, setSelectedSlots]);
 
+  // Memoized Set for efficient selectedSlots lookup
+  const selectedSlotsSet = useMemo(() => new Set(selectedSlots), [selectedSlots]);
+
   // Cell mouse handlers
-  const handleCellMouseDown = (row: number, col: number, slotId: string, isSelected: boolean) => {
+  const handleCellMouseDown = useCallback((row: number, col: number, slotId: string, isSelected: boolean) => {
+    if (!setSelectedSlots) {
+      if (typeof onRequireEdit === 'function') onRequireEdit();
+      return;
+    }
     setIsDragging(true);
     setDragMode(isSelected ? 'deselect' : 'select');
     setDraggedSlots(new Set([slotId]));
     setLastDragCell({ row, col });
-  };
-  const handleCellMouseEnter = (row: number, col: number, slotId: string) => {
+  }, [setSelectedSlots, onRequireEdit]);
+
+  const handleCellMouseEnter = useCallback((row: number, col: number, slotId: string) => {
+    if (!setSelectedSlots) return;
     if (isDragging && lastDragCell) {
       const path = getCellsBetween(lastDragCell, { row, col });
       setDraggedSlots(prev => {
@@ -157,31 +319,28 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
       });
       setLastDragCell({ row, col });
     }
-  };
-
-  // Height of one cell (px)
-  const cellHeight = 32;
+  }, [setSelectedSlots, isDragging, lastDragCell, getCellsBetween, grid]);
 
   return (
     <Box sx={{ width: '100%', overflowX: 'auto', pb: 2 }}>
-      {/* Header row: empty + day headers */}
+      {/* Header row: day headers */}
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: `repeat(${days.length}, 1fr)`,
           alignItems: 'center',
           borderBottom: `1px solid ${theme.palette.divider}`,
-          mb: 0.5,
-          ml: '60px' // leave space for time labels
+          ml: '60px'
+          // no margin bottom
         }}
       >
         {days.map(day => (
-          <Box key={day} sx={{ textAlign: 'center', py: 1 }}>
-            <Typography variant="subtitle2">
+          <Box key={day} sx={{ textAlign: 'center', py: 0.5 }}>
+            <Typography variant="body2" fontWeight="medium">
               {event.eventType === 'daysOfWeek' ? day : format(new Date(day + 'T00:00:00'), 'EEE')}
             </Typography>
             {event.eventType === 'specificDays' && (
-              <Typography variant="body2">
+              <Typography variant="caption" color="text.secondary">
                 {format(new Date(day + 'T00:00:00'), 'MMM d')}
               </Typography>
             )}
@@ -197,13 +356,13 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
               key={label + rowIdx}
               sx={{
                 position: 'absolute',
-                top: rowIdx * cellHeight,
+                top: rowIdx * cellHeight - 4, // Align top of hour to above cell top
                 height: cellHeight,
                 display: 'flex',
-                alignItems: 'flex-start',
+                alignItems: 'flex-start', // Align to top
                 justifyContent: 'flex-end',
-                pr: 1,
-                fontSize: 15,
+                pr: 1, // Adjusted padding right
+                fontSize: 13, // Slightly smaller font size
                 color: theme.palette.text.secondary,
                 pointerEvents: 'none',
                 width: '100%'
@@ -233,58 +392,44 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
         >
           {grid.map((rowArr, rowIdx) =>
             rowArr.map((cell, colIdx) => {
-              const availableCount = cell.availableUsers.length;
-              const intensity = Math.min(availableCount / 5, 1);
-              const isSelected = selectedSlots.includes(cell.slotId);
+              const isSelected = selectedSlotsSet.has(cell.slotId); 
               const isBeingDragged = draggedSlots.has(cell.slotId);
-              let bgColor = theme.palette.background.paper;
-              if (isBeingDragged && dragMode === 'select') {
-                bgColor = theme.palette.primary.light;
-              } else if (isBeingDragged && dragMode === 'deselect') {
-                bgColor = theme.palette.action.selected;
-              } else if (isSelected) {
-                bgColor = theme.palette.primary.main;
-              } else if (showOthersAvailability && availableCount > 0) {
-                bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.7})`;
-              }
+
+              // Pass this down to GridCell to control interactivity and cursor
+              const isSelectable = !!setSelectedSlots;
+
+              const onCellMouseDown = (e: React.MouseEvent) => {
+                e.preventDefault();
+                handleCellMouseDown(rowIdx, colIdx, cell.slotId, isSelected);
+              };
+              
+              const onCellMouseEnter = () => {
+                if (!isSelectable) return; // Guard logic inside handler
+                handleCellMouseEnter(rowIdx, colIdx, cell.slotId);
+              };
+
               return (
-                <Tooltip
+                <GridCell
                   key={cell.slotId}
-                  title={
-                    availableCount > 0
-                      ? `Available: ${cell.availableUsers.join(', ')}`
-                      : 'No one available'
-                  }
-                >
-                  <Box
-                    onMouseDown={e => { e.preventDefault(); handleCellMouseDown(rowIdx, colIdx, cell.slotId, isSelected); }}
-                    onMouseEnter={() => handleCellMouseEnter(rowIdx, colIdx, cell.slotId)}
-                    sx={{
-                      borderTop: rowIdx === 0 ? 'none' : `1px solid ${theme.palette.divider}`,
-                      borderRight: colIdx === days.length - 1 ? 'none' : `1px solid ${theme.palette.divider}`,
-                      borderLeft: 'none',
-                      borderBottom: 'none',
-                      height: `${cellHeight}px`,
-                      width: '100%',
-                      backgroundColor: bgColor,
-                      color: isSelected ? '#fff' : theme.palette.text.primary,
-                      cursor: 'pointer',
-                      transition: 'background 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 13,
-                      userSelect: 'none',
-                      '&:hover': {
-                        backgroundColor: isSelected
-                          ? theme.palette.primary.dark
-                          : theme.palette.mode === 'light'
-                            ? '#D1D5DB'
-                            : '#4B5563'
-                      }
-                    }}
-                  />
-                </Tooltip>
+                  cell={cell}
+                  isSelected={isSelected}
+                  isBeingDragged={isBeingDragged}
+                  dragMode={dragMode}
+                  showOthersAvailability={showOthersAvailability}
+                  theme={theme}
+                  onMouseDown={onCellMouseDown}
+                  onMouseEnter={onCellMouseEnter}
+                  colIdx={colIdx}
+                  rowIdx={rowIdx}
+                  daysLength={days.length}
+                  grid={grid}
+                  selectedSlotsSet={selectedSlotsSet}
+                  isSelectable={isSelectable}
+                  days={days}
+                  onSlotHover={onSlotHover}
+                  onSlotLeave={onSlotLeave}
+                  event={event}
+                />
               );
             })
           )}

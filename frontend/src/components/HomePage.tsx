@@ -43,15 +43,15 @@ const HomePage: React.FC = () => {
             gutterBottom
             sx={{ fontWeight: 'bold', textAlign: { xs: 'center', md: 'left' } }}
           >
-            Let's meet up!
+            When are you free?
           </Typography>
           <Typography
             variant="body1"
             color="textSecondary"
-            paragraph
+            paragraph 
             sx={{ textAlign: { xs: 'center', md: 'left' } }}
           >
-            Find the perfect time that works for everyone in seconds—no accounts, no hassle.
+            Sync with Google Calendar to effortlessly find the perfect time for everyone to meet.
           </Typography>
 
           {/* Sample Grid Preview */}
