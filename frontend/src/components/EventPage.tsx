@@ -55,6 +55,7 @@ import SignInModal from "./SignInModal";
 import AvailabilityGrid from "./AvailabilityGrid";
 import LinkIcon from "@mui/icons-material/Link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import storageService from "../services/storageService";
 
 // Types
 interface TimeSlot {
@@ -284,6 +285,28 @@ const EventPage: React.FC = () => {
     ]
   );
 
+  // Add function to get storage key for non-logged-in users
+  const getStorageKey = useCallback(() => {
+    return `availability_${eventId}_${name}`;
+  }, [eventId, name]);
+
+  // Load saved availability for non-logged-in users
+  useEffect(() => {
+    if (!user && name && eventId) {
+      const savedAvailability = storageService.getItem<string[]>(getStorageKey());
+      if (savedAvailability) {
+        setMySubmittedSlots(savedAvailability);
+      }
+    }
+  }, [user, name, eventId, getStorageKey]);
+
+  // Update storage for non-logged-in users when availability changes
+  useEffect(() => {
+    if (!user && name && mySubmittedSlots.length > 0) {
+      storageService.setItem(getStorageKey(), mySubmittedSlots);
+    }
+  }, [user, name, mySubmittedSlots, getStorageKey]);
+
   // Memoize the handleSubmit function
   const handleSubmit = useCallback(async () => {
     if (!name || selectedSlots.length === 0) {
@@ -319,6 +342,10 @@ const EventPage: React.FC = () => {
       );
 
       setMySubmittedSlots(formattedSlots);
+      // Save to storage only for non-logged-in users
+      if (!user) {
+        storageService.setItem(getStorageKey(), formattedSlots);
+      }
       setSelectedSlots([]);
       setEditingMyAvailability(false);
       setShowOthersAvailability(true);
@@ -332,7 +359,7 @@ const EventPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, selectedSlots, eventId, user, generateFormattedSlots]);
+  }, [name, selectedSlots, eventId, user, generateFormattedSlots, getStorageKey]);
 
   // Memoize the handleSlotSelection function
   const handleSlotSelection = useCallback((slot: string) => {
@@ -344,7 +371,7 @@ const EventPage: React.FC = () => {
     });
   }, []);
 
-  // Optimize the mySubmittedSlots effect
+  // Update the mySubmittedSlots effect to handle storage only for non-logged-in users
   useEffect(() => {
     if (!responses?.responses) {
       if (mySubmittedSlots.length > 0) {
@@ -353,14 +380,22 @@ const EventPage: React.FC = () => {
       return;
     }
 
+    console.log('responses.responses:', responses.responses);
+    console.log('user:', user);
+    console.log('nameRef.current:', nameRef.current);
+
     const nameToLookup = user?.name || nameRef.current;
-    const currentUserResponse = responses.responses.find(
-      (response: any) => response.userName === nameToLookup
+
+    // Collect all slotIds for this user
+    const userResponses = responses.responses.filter(
+      (response: any) => response.userName === nameToLookup && response.isAvailable
     );
+    const newSubmittedSlots = userResponses.map((r: any) => r.slotId);
 
-    const newSubmittedSlots = currentUserResponse?.selectedSlots || [];
+    console.log('nameToLookup:', nameToLookup);
+    console.log('userResponses:', userResponses);
+    console.log('newSubmittedSlots:', newSubmittedSlots);
 
-    // Use a more efficient comparison
     if (
       mySubmittedSlots.length !== newSubmittedSlots.length ||
       !mySubmittedSlots.every((slot, i) => slot === newSubmittedSlots[i])
@@ -368,6 +403,14 @@ const EventPage: React.FC = () => {
       setMySubmittedSlots(newSubmittedSlots);
     }
   }, [responses, user, nameRef, mySubmittedSlots]);
+
+  // Ensure selectedSlots is set to mySubmittedSlots when entering edit mode
+  useEffect(() => {
+    if (editingMyAvailability) {
+      setSelectedSlots(mySubmittedSlots);
+      console.log('selectedSlots:', selectedSlots);
+    }
+  }, [editingMyAvailability, mySubmittedSlots]);
 
   // 1. Fetch event data and all responses (runs when eventId or user changes)
   useEffect(() => {
@@ -432,153 +475,147 @@ const EventPage: React.FC = () => {
     );
   }, [hoveredSlotInfo, allUniqueUsers]);
 
+  // Add login handler
+  const handleGoogleLogin = () => {
+    setIsSignInModalOpen(true);
+  };
+
   // Add function to fetch calendar events
   const fetchCalendarEvents = async () => {
     if (!event) return;
-
+    
     if (!user) {
       setIsSignInModalOpen(true);
       return;
     }
 
+    setEditingMyAvailability(true);
+    setSelectedSlots(mySubmittedSlots);
+    setShowOthersAvailability(false);
+    
     setIsImporting(true);
     try {
       // Get date range based on event type
       let startDate, endDate;
-
-      if (
-        event.eventType === "specificDays" &&
-        event.specificDays?.length > 0
-      ) {
+      
+      if (event.eventType === 'specificDays' && event.specificDays?.length > 0) {
         startDate = event.specificDays[0];
         endDate = event.specificDays[event.specificDays.length - 1];
       } else {
         // For days of week events, use next 2 weeks
         const today = new Date();
-        startDate = format(today, "yyyy-MM-dd");
-        endDate = format(addDays(today, 14), "yyyy-MM-dd");
+        startDate = format(today, 'yyyy-MM-dd');
+        endDate = format(addDays(today, 14), 'yyyy-MM-dd');
       }
-
+      
       const response = await fetch(
         `${config.apiUrl}/api/calendar/events?startDate=${startDate}&endDate=${endDate}`,
-        { credentials: "include" }
+        { credentials: 'include' }
       );
-
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch calendar events");
+        throw new Error('Failed to fetch calendar events');
       }
-
+      
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.message);
       }
-
+      
       // Process calendar events and update selected slots
       const calendarEvents = data.data.events as CalendarEvent[];
       const newSelectedSlots = new Set(selectedSlots);
-
+      
       // For each time slot in our event
-      processedTimeSlots.forEach((slot) => {
+      processedTimeSlots.forEach(slot => {
         // Create a date object for the slot's start time
         let slotStart: Date;
         if (slot.dateObj) {
           slotStart = slot.dateObj;
         } else if (slot.date) {
           // For specific days events, create date in local timezone
-          const [year, month, day] = slot.date.split("-").map(Number);
-          const [hours, minutes] = slot.time.split(":").map(Number);
+          const [year, month, day] = slot.date.split('-').map(Number);
+          const [hours, minutes] = slot.time.split(':').map(Number);
           slotStart = new Date(year, month - 1, day, hours, minutes);
         } else {
           // For days of week events, use today's date
           const today = new Date();
-          const [hours, minutes] = slot.time.split(":").map(Number);
-          slotStart = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-            hours,
-            minutes
-          );
+          const [hours, minutes] = slot.time.split(':').map(Number);
+          slotStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
         }
-
+        
         const slotEnd = addMinutes(slotStart, 15); // 15-minute slots
-
+        
         // Check if this slot overlaps with any calendar event
-        const hasOverlap = calendarEvents.some((event) => {
+        const hasOverlap = calendarEvents.some(event => {
           // Parse the ISO dates with timezone information
           const eventStart = new Date(event.start);
           const eventEnd = new Date(event.end);
-
+          
           // Convert all dates to UTC for comparison
-          const slotStartUTC = new Date(
-            Date.UTC(
-              slotStart.getFullYear(),
-              slotStart.getMonth(),
-              slotStart.getDate(),
-              slotStart.getHours(),
-              slotStart.getMinutes()
-            )
-          );
-
-          const slotEndUTC = new Date(
-            Date.UTC(
-              slotEnd.getFullYear(),
-              slotEnd.getMonth(),
-              slotEnd.getDate(),
-              slotEnd.getHours(),
-              slotEnd.getMinutes()
-            )
-          );
-
-          const eventStartUTC = new Date(
-            Date.UTC(
-              eventStart.getFullYear(),
-              eventStart.getMonth(),
-              eventStart.getDate(),
-              eventStart.getHours(),
-              eventStart.getMinutes()
-            )
-          );
-
-          const eventEndUTC = new Date(
-            Date.UTC(
-              eventEnd.getFullYear(),
-              eventEnd.getMonth(),
-              eventEnd.getDate(),
-              eventEnd.getHours(),
-              eventEnd.getMinutes()
-            )
-          );
-
-          const overlaps =
+          const slotStartUTC = new Date(Date.UTC(
+            slotStart.getFullYear(),
+            slotStart.getMonth(),
+            slotStart.getDate(),
+            slotStart.getHours(),
+            slotStart.getMinutes()
+          ));
+          
+          const slotEndUTC = new Date(Date.UTC(
+            slotEnd.getFullYear(),
+            slotEnd.getMonth(),
+            slotEnd.getDate(),
+            slotEnd.getHours(),
+            slotEnd.getMinutes()
+          ));
+          
+          const eventStartUTC = new Date(Date.UTC(
+            eventStart.getFullYear(),
+            eventStart.getMonth(),
+            eventStart.getDate(),
+            eventStart.getHours(),
+            eventStart.getMinutes()
+          ));
+          
+          const eventEndUTC = new Date(Date.UTC(
+            eventEnd.getFullYear(),
+            eventEnd.getMonth(),
+            eventEnd.getDate(),
+            eventEnd.getHours(),
+            eventEnd.getMinutes()
+          ));
+          
+          const overlaps = (
             (slotStartUTC >= eventStartUTC && slotStartUTC < eventEndUTC) || // Slot starts during event
             (slotEndUTC > eventStartUTC && slotEndUTC <= eventEndUTC) || // Slot ends during event
-            (slotStartUTC <= eventStartUTC && slotEndUTC >= eventEndUTC); // Slot completely contains event
-
+            (slotStartUTC <= eventStartUTC && slotEndUTC >= eventEndUTC) // Slot completely contains event
+          );
+          
           return overlaps;
         });
-
+        
         // If no overlap, mark the slot as available
         if (!hasOverlap) {
           newSelectedSlots.add(slot.id);
-        } else {
+        }
+        else {
           newSelectedSlots.delete(slot.id);
         }
       });
-
+      
       setSelectedSlots(Array.from(newSelectedSlots));
-
+      
       setSnackbar({
         open: true,
-        message: "Calendar events imported successfully",
-        severity: "success",
+        message: 'Calendar events imported successfully',
+        severity: 'success'
       });
     } catch (error) {
-      console.error("Error importing calendar events:", error);
+      console.error('Error importing calendar events:', error);
       setSnackbar({
         open: true,
-        message: "Failed to import calendar events",
-        severity: "error",
+        message: 'Failed to import calendar events',
+        severity: 'error'
       });
     } finally {
       setIsImporting(false);
@@ -589,6 +626,13 @@ const EventPage: React.FC = () => {
     setFlashEditButton(true);
     setTimeout(() => setFlashEditButton(false), 400);
   }, []);
+
+  // Clear selectedSlots when leaving edit mode
+  useEffect(() => {
+    if (!editingMyAvailability) {
+      setSelectedSlots([]);
+    }
+  }, [editingMyAvailability]);
 
   if (isLoading) {
     return (
@@ -611,7 +655,7 @@ const EventPage: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 1 }}>
       <Paper elevation={2} sx={{ p: 3 }}>
         {/* Title Section */}
-        <Box sx={{ mb: 4 }}>
+        <Box>
           <Box
             sx={{
               display: "flex",
@@ -688,91 +732,116 @@ const EventPage: React.FC = () => {
                 </Box>
               )}
             </Box>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="large"
-                startIcon={<LinkIcon />}
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  setSnackbar({
-                    open: true,
-                    message: "Event link copied to clipboard!",
-                    severity: "success",
-                  });
-                }}
-                sx={{
-                  textTransform: "none",
-                  borderColor: "divider",
-                  color: "text.secondary",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    backgroundColor: "transparent",
-                  },
-                }}
-              >
-                Copy link
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="large"
-                startIcon={<CalendarMonthIcon />}
-                onClick={fetchCalendarEvents}
-                disabled={isImporting}
-                sx={{
-                  textTransform: "none",
-                  borderColor: "divider",
-                  color: "text.secondary",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    backgroundColor: "transparent",
-                  },
-                }}
-              >
-                {isImporting ? "Importing..." : "Import from Google Calendar"}
-              </Button>
-              {editingMyAvailability ? (
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   color="primary"
                   size="large"
-                  disabled={
-                    isSubmitting ||
-                    (!user && !name) ||
-                    selectedSlots.length === 0
-                  }
-                  onClick={handleSubmit}
-                  sx={{
-                    minWidth: "160px",
-                    textTransform: "none",
-                  }}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit"}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
+                  startIcon={<LinkIcon />}
                   onClick={() => {
-                    setEditingMyAvailability(true);
-                    setSelectedSlots(mySubmittedSlots);
-                    setShowOthersAvailability(false);
+                    navigator.clipboard.writeText(window.location.href);
+                    setSnackbar({
+                      open: true,
+                      message: "Event link copied to clipboard!",
+                      severity: "success",
+                    });
                   }}
                   sx={{
-                    minWidth: "160px",
                     textTransform: "none",
-                    transition: "box-shadow 0.2s, background 0.2s",
-                    boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
-                    backgroundColor: flashEditButton ? "primary.light" : undefined,
-                    opacity: flashEditButton ? 0.8 : 1,
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      backgroundColor: "transparent",
+                    },
                   }}
                 >
-                  Edit availability
+                  Copy link
                 </Button>
-              )}
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="large"
+                  startIcon={<CalendarMonthIcon />}
+                  onClick={user ? fetchCalendarEvents : handleGoogleLogin}
+                  disabled={isImporting}
+                  sx={{
+                    textTransform: "none",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      backgroundColor: "transparent",
+                    },
+                  }}
+                >
+                  {isImporting ? "Importing..." : (user || editingMyAvailability) ? "Import Google Calendar" : "Login with Google"}
+                </Button>
+                {editingMyAvailability ? (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    disabled={
+                      isSubmitting ||
+                      (!user && !name) ||
+                      selectedSlots.length === 0
+                    }
+                    onClick={handleSubmit}
+                    sx={{
+                      minWidth: "160px",
+                      textTransform: "none",
+                    }}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    onClick={() => {
+                      setEditingMyAvailability(true);
+                      setSelectedSlots(mySubmittedSlots);
+                      setShowOthersAvailability(false);
+                    }}
+                    sx={{
+                      minWidth: "160px",
+                      textTransform: "none",
+                      transition: "box-shadow 0.2s, background 0.2s",
+                      boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
+                      backgroundColor: flashEditButton ? "primary.light" : undefined,
+                      opacity: flashEditButton ? 0.8 : 1,
+                    }}
+                  >
+                    {mySubmittedSlots.length > 0 ? "Edit availability" : "Enter availability"}
+                  </Button>
+                )}
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showOthersAvailability}
+                    onChange={(e) =>
+                      setShowOthersAvailability(e.target.checked)
+                    }
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2" color="text.secondary">
+                    Show others' availability
+                  </Typography>
+                }
+                sx={{
+                  m: 0,
+                  "& .MuiFormControlLabel-label": {
+                    fontSize: "0.875rem",
+                  },
+                }}
+              />
             </Box>
           </Box>
         </Box>
@@ -939,23 +1008,7 @@ const EventPage: React.FC = () => {
                   mb: 3,
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                  When are you free?
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={showOthersAvailability}
-                        onChange={(e) =>
-                          setShowOthersAvailability(e.target.checked)
-                        }
-                        color="primary"
-                      />
-                    }
-                    label="Show others' availability"
-                  />
-                </Box>
+                
               </Box>
 
               {editingMyAvailability && !user && (
@@ -982,6 +1035,7 @@ const EventPage: React.FC = () => {
               {/* Availability Grid */}
               <AvailabilityGrid
                 {...availabilityGridProps}
+                editingMyAvailability={editingMyAvailability}
                 onSlotHover={handleSlotHover}
                 onSlotLeave={handleSlotLeave}
                 onRequireEdit={handleRequireEdit}

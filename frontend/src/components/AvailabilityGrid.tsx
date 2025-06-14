@@ -25,6 +25,7 @@ interface AvailabilityGridProps {
   onSlotHover: (slotId: string, availableUsers: string[], time: string, dayLabel: string) => void;
   onSlotLeave: () => void;
   onRequireEdit?: () => void;
+  editingMyAvailability: boolean;
 }
 
 // Helper to get hour from 'HH:mm'
@@ -56,6 +57,7 @@ interface GridCellProps {
   onSlotHover: (slotId: string, availableUsers: string[], time: string, dayLabel: string) => void;
   onSlotLeave: () => void;
   event: any;
+  editingMyAvailability: boolean;
 }
 
 const GridCell: React.FC<GridCellProps> = React.memo(({
@@ -77,6 +79,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
   onSlotHover,
   onSlotLeave,
   event,
+  editingMyAvailability,
 }) => {
   const availableCount = cell.availableUsers.length;
   const intensity = Math.min(availableCount / 5, 1);
@@ -94,7 +97,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
 
   // Border logic for outline/merge
   let border: React.CSSProperties = {};
-  if (showOthersAvailability && isSelected) {
+  if (editingMyAvailability && isSelected) {
     const isAboveSelected = rowIdx > 0 && selectedSlotsSet.has(grid[rowIdx - 1][colIdx].slotId);
     const isBelowSelected = rowIdx < grid.length - 1 && selectedSlotsSet.has(grid[rowIdx + 1][colIdx].slotId);
     const isLastRow = rowIdx === grid.length - 1;
@@ -110,7 +113,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
           : (isAboveSelected ? 'none' : '2px solid ' + theme.palette.primary.main),
     };
   } else {
-    // Add gray divider borders for non-selected cells
+    // Add gray divider borders for non-selected cells or when not editing
     border = {
       borderLeft: '1px solid ' + theme.palette.divider,
       borderRight: '1px solid ' + theme.palette.divider,
@@ -165,6 +168,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   onSlotHover,
   onSlotLeave,
   onRequireEdit,
+  editingMyAvailability,
 }) => {
   // Days (columns)
   let days = Object.keys(groupedByDate);
@@ -429,6 +433,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   onSlotHover={onSlotHover}
                   onSlotLeave={onSlotLeave}
                   event={event}
+                  editingMyAvailability={editingMyAvailability}
                 />
               );
             })
