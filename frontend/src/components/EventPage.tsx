@@ -285,29 +285,26 @@ const EventPage: React.FC = () => {
     ]
   );
 
-  // Add function to get storage key for non-logged-in users
-  const getStorageKey = useCallback(() => {
-    return `availability_${eventId}_${name}`;
-  }, [eventId, name]);
-
-  // Load saved availability for non-logged-in users
+  // On mount, load last submitted guest name and availability (runs only once)
   useEffect(() => {
-    if (!user && name && eventId) {
-      const savedAvailability = storageService.getItem<string[]>(getStorageKey());
-      if (savedAvailability) {
-        setMySubmittedSlots(savedAvailability);
+    if (!user && eventId) {
+      const lastGuestName = storageService.getItem<string>(`guestName_${eventId}`);
+      console.log('[LocalStorage][GUEST][LOAD]', `guestName_${eventId}`, lastGuestName);
+      if (lastGuestName) {
+        setName(lastGuestName);
+        const key = `availability_${eventId}_${lastGuestName}`;
+        const loadedAvailability = storageService.getItem<string[]>(key);
+        console.log('[LocalStorage][GUEST][LOAD]', key, loadedAvailability);
+        if (loadedAvailability) {
+          setMySubmittedSlots(loadedAvailability);
+        }
       }
     }
-  }, [user, name, eventId, getStorageKey]);
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Update storage for non-logged-in users when availability changes
-  useEffect(() => {
-    if (!user && name && mySubmittedSlots.length > 0) {
-      storageService.setItem(getStorageKey(), mySubmittedSlots);
-    }
-  }, [user, name, mySubmittedSlots, getStorageKey]);
-
-  // Memoize the handleSubmit function
+  // Save guest name and availability to local storage only after successful submission
   const handleSubmit = useCallback(async () => {
     if (!name || selectedSlots.length === 0) {
       setSnackbar({
@@ -342,9 +339,15 @@ const EventPage: React.FC = () => {
       );
 
       setMySubmittedSlots(formattedSlots);
-      // Save to storage only for non-logged-in users
+      // Save to guest storage only for non-logged-in users
       if (!user) {
-        storageService.setItem(getStorageKey(), formattedSlots);
+        const key = eventId && name ? `availability_${eventId}_${name}` : '';
+        if (key) {
+          console.log('[LocalStorage][GUEST][SAVE]', key, formattedSlots);
+          storageService.setItem(key, formattedSlots);
+          // Save last used name
+          storageService.setItem(`guestName_${eventId}`, name);
+        }
       }
       setSelectedSlots([]);
       setEditingMyAvailability(false);
@@ -359,7 +362,7 @@ const EventPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, selectedSlots, eventId, user, generateFormattedSlots, getStorageKey]);
+  }, [name, selectedSlots, eventId, user, generateFormattedSlots]);
 
   // Memoize the handleSlotSelection function
   const handleSlotSelection = useCallback((slot: string) => {
