@@ -120,6 +120,32 @@ export const submitAvailability = async (eventId: string, data: {
   }
 };
 
+export const updateAvailability = async (eventId: string, data: {
+  userName: string;
+  userId?: string;
+  selectedSlots: string[];
+}): Promise<ApiResponse<void>> => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/events/${eventId}/availability`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'Failed to update availability');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error updating availability:', error);
+    throw error;
+  }
+};
+
 export const getEventResponses = async (eventId: string): Promise<{
   totalResponses: number;
   uniqueUsers: number;

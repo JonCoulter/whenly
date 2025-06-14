@@ -48,6 +48,7 @@ import {
   getEventById,
   submitAvailability,
   getEventResponses,
+  updateAvailability,
 } from "../api/eventService";
 import config from "../config";
 import { useAuth } from "../contexts/AuthContext";
@@ -318,11 +319,25 @@ const EventPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const formattedSlots = generateFormattedSlots(selectedSlots);
-
-      await submitAvailability(eventId!, {
+      // Define payload type to include optional userId
+      const payload: {
+        userName: string;
+        selectedSlots: string[];
+        userId?: string;
+      } = {
         userName: name,
         selectedSlots: formattedSlots,
-      });
+      };
+      if (user && user.email) {
+        payload.userId = user.email;
+      }
+
+      // Use PUT if user has already submitted, else POST
+      if (mySubmittedSlots.length > 0) {
+        await updateAvailability(eventId!, payload);
+      } else {
+        await submitAvailability(eventId!, payload);
+      }
 
       setSnackbar({
         open: true,
@@ -362,7 +377,7 @@ const EventPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, selectedSlots, eventId, user, generateFormattedSlots]);
+  }, [name, selectedSlots, eventId, user, generateFormattedSlots, mySubmittedSlots]);
 
   // Memoize the handleSlotSelection function
   const handleSlotSelection = useCallback((slot: string) => {
@@ -797,7 +812,9 @@ const EventPage: React.FC = () => {
                       textTransform: "none",
                     }}
                   >
-                    {isSubmitting ? "Submitting..." : "Submit"}
+                    {isSubmitting
+                      ? (mySubmittedSlots.length > 0 ? "Updating..." : "Submitting...")
+                      : (mySubmittedSlots.length > 0 ? "Update" : "Submit")}
                   </Button>
                 ) : (
                   <Button

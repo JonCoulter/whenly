@@ -539,6 +539,103 @@ def create_app(config_name='default'):
                 "message": f"Failed to get responses: {str(e)}"
             }), 500
     
+    @app.route('/api/events/<event_id>/availability', methods=['PUT'])
+    def update_availability(event_id):
+        """
+        Update availability for an event (replace all previous slots for this user).
+        Expected payload:
+        {
+            "userName": "John Doe",
+            "userId": "user@email.com",  # Optional
+            "selectedSlots": ["Monday-09:00", ...] or ["2024-03-20-09:00", ...]
+        }
+        """
+        try:
+            data = request.json
+            if not data or not isinstance(data, dict):
+                return jsonify({"success": False, "message": "Invalid request data"}), 400
+
+            required_fields = ['userName', 'selectedSlots']
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({"success": False, "message": f"Missing required field: {field}"}), 400
+
+            user_id = data.get('userId')
+            user_name = data['userName']
+
+            # Get event and validate it exists
+            event = Event.query.filter_by(id=event_id).first()
+            if not event:
+                return jsonify({"success": False, "message": "Event not found"}), 404
+
+            # Delete all previous responses for this user/event
+            if user_id:
+                Response.query.filter_by(event_id=event_id, user_id=user_id).delete()
+            else:
+                Response.query.filter_by(event_id=event_id, user_name=user_name).delete()
+            db.session.commit()
+
+            # Insert new responses (same as POST logic)
+            for slot_id in data['selectedSlots']:
+                if event.event_type == 'daysOfWeek':
+                    clean_slot_id = slot_id.split('-undefined')[0]
+                    day_of_week, time_str = clean_slot_id.split('-')
+                    slot = AvailabilitySlot.query.filter_by(
+                        event_id=event_id,
+                        day_of_week=day_of_week,
+                        start_time=time_str
+                    ).first()
+                    if not slot:
+                        slot = AvailabilitySlot(
+                            event_id=event_id,
+                            day_of_week=day_of_week,
+                            start_time=time_str,
+                            end_time=time_str
+                        )
+                        db.session.add(slot)
+                        db.session.flush()
+                else:
+                    parts = slot_id.split('-')
+                    date_str = '-'.join(parts[:3])
+                    time_str = parts[3]
+                    date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    slot = AvailabilitySlot.query.filter_by(
+                        event_id=event_id,
+                        date=date,
+                        start_time=time_str
+                    ).first()
+                    if not slot:
+                        slot = AvailabilitySlot(
+                            event_id=event_id,
+                            date=date,
+                            start_time=time_str,
+                            end_time=time_str
+                        )
+                        db.session.add(slot)
+                        db.session.flush()
+                response = Response(
+                    event_id=event_id,
+                    slot_id=slot.id,
+                    user_id=user_id,
+                    user_name=user_name,
+                    is_available=True
+                )
+                db.session.add(response)
+            db.session.commit()
+
+            return jsonify({
+                "success": True,
+                "message": "Availability updated successfully"
+            }), 200
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error updating availability: {str(e)}")
+            return jsonify({
+                "success": False,
+                "message": f"Failed to update availability: {str(e)}"
+            }), 500
+    
     # Create database tables
     with app.app_context():
         db.create_all()
