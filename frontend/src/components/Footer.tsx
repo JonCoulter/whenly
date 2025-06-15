@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Container, Typography, Link, Grid, useTheme } from '@mui/material';
+import { Box, Container, Typography, Link, Grid, useTheme, Stack } from '@mui/material';
 
 interface FooterProps {
   title?: string;
@@ -8,6 +8,15 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
   const theme = useTheme();
   
+  const linkStyle = {
+    textDecoration: 'none',
+    color: 'text.secondary',
+    transition: 'color 0.2s',
+    '&:hover': {
+      color: theme.palette.primary.main,
+    }
+  };
+
   return (
     <Box 
       component="footer" 
@@ -22,52 +31,27 @@ const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
         <Grid container spacing={2} justifyContent="space-between">
           <Grid size={{ xs:12, sm:6 }}>
             <Typography variant="body2" color="text.secondary">
-              © {new Date().getFullYear()} {title}. All rights reserved.
+              {title} - Made with ❤️ by <Link href="https://joncoulter.github.io" target="_blank" rel="noopener" color="inherit" sx={{ textDecoration: 'none', color: 'text.secondary', '&:hover': { color: theme.palette.primary.main } }}>Jonathan Coulter</Link>
             </Typography>
           </Grid>
           <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
-            <Link
-              href="#" 
-              color="inherit" 
-              sx={{ 
-                px: 1, 
-                textDecoration: 'none',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                }
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                alignItems: 'center',
+                width: '100%',
               }}
             >
-              Privacy Policy
-            </Link>
-            <Link 
-              href="#" 
-              color="inherit" 
-              sx={{ 
-                px: 1, 
-                textDecoration: 'none',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                }
-              }}
-            >
-              Terms of Service
-            </Link>
-            <Link 
-              href="#" 
-              color="inherit" 
-              sx={{ 
-                px: 1, 
-                textDecoration: 'none',
-                color: 'text.secondary',
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                }
-              }}
-            >
-              Contact
-            </Link>
+              <Stack direction="row" spacing={2}>
+                <Link href="#" sx={linkStyle} target="_blank" rel="noopener">
+                  Privacy Policy
+                </Link>
+                <Link href="https://forms.gle/NSxnXYc2Ge69WpJ5A" sx={linkStyle} target="_blank" rel="noopener">
+                  Feedback Form
+                </Link>
+              </Stack>
+            </Box>
           </Grid>
         </Grid>
       </Container>
