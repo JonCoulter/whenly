@@ -733,7 +733,7 @@ const EventPage: React.FC = () => {
               </Box>
               {event?.eventType === "specificDays" && (
                 <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
                 >
                   <Typography
                     variant="body1"
