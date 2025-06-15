@@ -57,7 +57,7 @@ import AvailabilityGrid from "./AvailabilityGrid";
 import LinkIcon from "@mui/icons-material/Link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import storageService from "../services/storageService";
-
+import CloseIcon from "@mui/icons-material/Close";
 // Types
 interface TimeSlot {
   id: string;
@@ -292,12 +292,10 @@ const EventPage: React.FC = () => {
   useEffect(() => {
     if (!user && eventId) {
       const lastGuestName = storageService.getItem<string>(`guestName_${eventId}`);
-      console.log('[LocalStorage][GUEST][LOAD]', `guestName_${eventId}`, lastGuestName);
       if (lastGuestName) {
         setName(lastGuestName);
         const key = `availability_${eventId}_${lastGuestName}`;
         const loadedAvailability = storageService.getItem<string[]>(key);
-        console.log('[LocalStorage][GUEST][LOAD]', key, loadedAvailability);
         if (loadedAvailability) {
           setMySubmittedSlots(loadedAvailability);
         }
@@ -360,7 +358,6 @@ const EventPage: React.FC = () => {
       if (!user) {
         const key = eventId && name ? `availability_${eventId}_${name}` : '';
         if (key) {
-          console.log('[LocalStorage][GUEST][SAVE]', key, formattedSlots);
           storageService.setItem(key, formattedSlots);
           // Save last used name
           storageService.setItem(`guestName_${eventId}`, name);
@@ -400,10 +397,6 @@ const EventPage: React.FC = () => {
       return;
     }
 
-    console.log('responses.responses:', responses.responses);
-    console.log('user:', user);
-    console.log('nameRef.current:', nameRef.current);
-
     const nameToLookup = user?.name || nameRef.current;
 
     // Collect all slotIds for this user
@@ -411,10 +404,6 @@ const EventPage: React.FC = () => {
       (response: any) => response.userName === nameToLookup && response.isAvailable
     );
     const newSubmittedSlots = userResponses.map((r: any) => r.slotId);
-
-    console.log('nameToLookup:', nameToLookup);
-    console.log('userResponses:', userResponses);
-    console.log('newSubmittedSlots:', newSubmittedSlots);
 
     if (
       mySubmittedSlots.length !== newSubmittedSlots.length ||
@@ -428,7 +417,6 @@ const EventPage: React.FC = () => {
   useEffect(() => {
     if (editingMyAvailability) {
       setSelectedSlots(mySubmittedSlots);
-      console.log('selectedSlots:', selectedSlots);
     }
   }, [editingMyAvailability, mySubmittedSlots]);
 
@@ -697,58 +685,37 @@ const EventPage: React.FC = () => {
               >
                 {event?.name || "Event Details"}
               </Typography>
-              {(event?.eventType === "specificDays" ||
-                event?.creatorName === user?.name) && (
+              {event?.eventType === "specificDays" && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {event?.eventType === "specificDays" &&
-                    (() => {
-                      let startDate =
-                        event?.specificDays?.[0] ||
-                        new Date().toISOString().split("T")[0];
-                      let endDate =
-                        event?.specificDays?.[event?.specificDays?.length - 1] ||
-                        new Date().toISOString().split("T")[0];
-                      if (event?.specificDays && event.specificDays.length > 1) {
-                        // Sort dates to ensure correct order
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.5, mr: 1 }}
+                  >
+                    {(() => {
+                      if (!event?.specificDays?.length) {
+                        return null;
+                      }
+
+                      let startDate = event.specificDays[0];
+                      let endDate = event.specificDays[event.specificDays.length - 1];
+
+                      if (event.specificDays.length > 1) {
                         const sorted = [...event.specificDays].sort(
                           (a, b) => new Date(a).getTime() - new Date(b).getTime()
                         );
                         startDate = sorted[0];
                         endDate = sorted[sorted.length - 1];
                       }
+
                       return (
-                        <Typography
-                          variant="body1"
-                          color="text.secondary"
-                          sx={{ lineHeight: 1.5, mr: 1 }}
-                        >
+                        <>
                           {format(parseISO(startDate), "M/d")} -{" "}
                           {format(parseISO(endDate), "M/d")}
-                        </Typography>
+                        </>
                       );
                     })()}
-                  {event?.creatorName === user?.name && (
-                    <Button
-                      variant="text"
-                      size="small"
-                      sx={{
-                        textTransform: "none",
-                        color: "primary.main",
-                        fontWeight: 500,
-                        p: 0,
-                        minWidth: 0,
-                        "&:hover": {
-                          backgroundColor: "transparent",
-                          color: "primary.dark",
-                        },
-                      }}
-                      onClick={() => {
-                        console.log("edit event");
-                      }}
-                    >
-                      Edit event
-                    </Button>
-                  )}
+                  </Typography>
                 </Box>
               )}
             </Box>
@@ -799,11 +766,8 @@ const EventPage: React.FC = () => {
                   {isImporting ? "Importing..." : (user || editingMyAvailability) ? "Import Google Calendar" : "Login with Google"}
                 </Button>
                 {editingMyAvailability ? (
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      size="large"
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
                       disabled={isSubmitting}
                       onClick={() => {
                         setEditingMyAvailability(false);
@@ -811,20 +775,14 @@ const EventPage: React.FC = () => {
                         setShowOthersAvailability(true);
                       }}
                       sx={{
-                        minWidth: "10px",
-                        textTransform: "none",
-                        padding: '0px 12px',
-                        borderColor: 'divider',
                         color: 'text.secondary',
-                        backgroundColor: 'background.paper',
                         '&:hover': {
-                          borderColor: 'secondary.main',
-                          backgroundColor: 'action.hover',
+                          color: 'secondary.main',
                         },
                       }}
                     >
-                      Cancel
-                    </Button>
+                      <CloseIcon />
+                    </IconButton>
                     <Button
                       variant="contained"
                       color="primary"
@@ -836,7 +794,7 @@ const EventPage: React.FC = () => {
                       }
                       onClick={handleSubmit}
                       sx={{
-                        minWidth: mySubmittedSlots.length > 0 ? "90px" : "160px",
+                        minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
                         textTransform: "none",
                       }}
                     >
@@ -856,7 +814,7 @@ const EventPage: React.FC = () => {
                       setShowOthersAvailability(false);
                     }}
                     sx={{
-                      minWidth: "180px",
+                      minWidth: "160px",
                       textTransform: "none",
                       transition: "box-shadow 0.2s, background 0.2s",
                       boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
@@ -906,142 +864,72 @@ const EventPage: React.FC = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    mb: 2,
+                    my: 1,
                   }}
                 >
                   <Typography variant="h6" sx={{ fontWeight: 500 }}>
                     Responses
                   </Typography>
                 </Box>
-                {hoveredSlotInfo ? (
-                  <Box>
+                <Box>
+                  {/* Top label */}
+                  {hoveredSlotInfo ? (
                     <Typography
                       variant="subtitle2"
                       sx={{ mb: 1, color: "text.secondary" }}
                     >
-                      {hoveredSlotInfo.dayLabel} on{" "}
-                      {format(
+                      {hoveredSlotInfo.dayLabel} on {format(
                         parse(hoveredSlotInfo.time, "HH:mm", new Date()),
                         "h:mm a"
                       )}
                     </Typography>
-                    <Divider sx={{ mb: 1 }} />
-                    {hoveredSlotInfo.availableUsers.length > 0 ? (
-                      <Box sx={{ mb: 1.5 }}>
-                        <Typography
-                          variant="body2"
-                          color="success.main"
-                          sx={{ fontWeight: "bold", mb: 0.5 }}
-                        >
-                          Available:
-                        </Typography>
-                        <List dense disablePadding>
-                          {hoveredSlotInfo.availableUsers.map((user) => (
-                            <ListItem key={user} sx={{ py: 0.25 }}>
-                              <ListItemIcon sx={{ minWidth: "30px" }}>
-                                <CheckCircleIcon
-                                  color="success"
-                                  fontSize="small"
-                                />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={user}
-                                primaryTypographyProps={{ variant: "body2" }}
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </Box>
-                    ) : (
-                      <></>
-                    )}
-                    {unavailableUsers.length > 0 && (
-                      <Box>
-                        <Typography
-                          variant="body2"
-                          color="error.main"
-                          sx={{ fontWeight: "bold", mb: 0.5 }}
-                        >
-                          Unavailable:
-                        </Typography>
-                        <List dense disablePadding>
-                          {unavailableUsers.map((user) => (
-                            <ListItem key={user} sx={{ py: 0.25 }}>
-                              <ListItemIcon sx={{ minWidth: "30px" }}>
-                                <Cancel color="error" fontSize="small" />
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={user}
-                                primaryTypographyProps={{ variant: "body2" }}
-                              />
-                            </ListItem>
-                          ))}
-                        </List>
-                      </Box>
-                    )}
-                  </Box>
-                ) : (
-                  <Box>
-                    {allUniqueUsers.size > 0 ? (
-                      <List dense disablePadding>
-                        {Array.from(allUniqueUsers).map((uniqueUser) => {
-                          const isCreator = event?.creatorName === uniqueUser;
-                          const isCurrentUser = user?.name === uniqueUser;
-                          return (
-                            <ListItem
-                              key={uniqueUser}
-                              sx={{
-                                py: 0.75,
-                                px: 1,
-                                borderRadius: "4px",
-                                backgroundColor: isCreator
-                                  ? "rgba(0, 0, 0, 0.04)"
-                                  : "transparent",
-                                "&:hover": {
-                                  backgroundColor: "rgba(0, 0, 0, 0.08)",
-                                },
+                  ) : (
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ mb: 1, color: "text.secondary" }}
+                    >
+                      Hover to view availability
+                    </Typography>
+                  )}
+                  <Divider sx={{ mb: 1 }} />
+                  {/* Single list of all responders, with hover styling */}
+                  {allUniqueUsers.size > 0 ? (
+                    <List dense disablePadding>
+                      {Array.from(allUniqueUsers).map((uniqueUser) => {
+                        let isAvailable = false;
+                        if (hoveredSlotInfo) {
+                          isAvailable = hoveredSlotInfo.availableUsers.includes(uniqueUser);
+                        }
+                        return (
+                          <ListItem key={uniqueUser} sx={{ py: 0.5 }}>
+                            <ListItemIcon sx={{ minWidth: 36 }}>
+                              <Avatar
+                                sx={{ width: 24, height: 24, bgcolor: "grey.400" }}
+                              >
+                                {uniqueUser.charAt(0)}
+                              </Avatar>
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={uniqueUser}
+                              primaryTypographyProps={{
+                                variant: "body2",
+                                sx: hoveredSlotInfo
+                                  ? isAvailable
+                                    ? { }
+                                    : { color: 'text.disabled', textDecoration: 'line-through' }
+                                  : {},
                               }}
-                            >
-                              <ListItemIcon sx={{ minWidth: 36 }}>
-                                {isCurrentUser && user?.picture ? (
-                                  <Avatar
-                                    src={user.picture}
-                                    alt={uniqueUser}
-                                    sx={{ width: 24, height: 24 }}
-                                  />
-                                ) : (
-                                  <Avatar
-                                    sx={{
-                                      width: 24,
-                                      height: 24,
-                                      bgcolor: "grey.400",
-                                    }}
-                                  >
-                                    {uniqueUser.charAt(0)}
-                                  </Avatar>
-                                )}
-                              </ListItemIcon>
-                              <ListItemText
-                                primary={uniqueUser}
-                                primaryTypographyProps={{
-                                  variant: "body1",
-                                  sx: {
-                                    fontWeight: 400,
-                                    color: "text.primary",
-                                  },
-                                }}
-                              />
-                            </ListItem>
-                          );
-                        })}
-                      </List>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        No one has responded to this event yet.
-                      </Typography>
-                    )}
-                  </Box>
-                )}
+                            />
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No one has responded to this event yet.
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             )}
           </Grid>

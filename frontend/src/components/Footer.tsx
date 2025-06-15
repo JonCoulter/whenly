@@ -16,18 +16,17 @@ const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
         borderTop: '1px solid',
         borderColor: 'divider',
         width: '100%',
-        flexShrink: 0, // Prevents the footer from shrinking
       }}
     >
       <Container maxWidth="lg">
         <Grid container spacing={2} justifyContent="space-between">
-          <Grid xs={12} sm={6}>
+          <Grid size={{ xs:12, sm:6 }}>
             <Typography variant="body2" color="text.secondary">
               © {new Date().getFullYear()} {title}. All rights reserved.
             </Typography>
           </Grid>
-          <Grid xs={12} sm={6} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
-            <Link 
+          <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+            <Link
               href="#" 
               color="inherit" 
               sx={{ 

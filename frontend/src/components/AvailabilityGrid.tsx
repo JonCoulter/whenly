@@ -96,7 +96,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
   } else if (isSelected && !showOthersAvailability) {
     bgColor = theme.palette.primary.main;
   } else if (showOthersAvailability && availableCount > 0) {
-    bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.7})`;
+    bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.75})`;
   }
 
   // Border logic for outline/merge
