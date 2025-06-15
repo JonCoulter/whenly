@@ -273,6 +273,7 @@ const EventPage: React.FC = () => {
       showOthersAvailability,
       processedTimeSlots,
       theme,
+      uniqueUserCount: responses?.uniqueUsers || 1,
     }),
     [
       event,
@@ -283,6 +284,7 @@ const EventPage: React.FC = () => {
       showOthersAvailability,
       processedTimeSlots,
       theme,
+      responses?.uniqueUsers,
     ]
   );
 
@@ -797,25 +799,52 @@ const EventPage: React.FC = () => {
                   {isImporting ? "Importing..." : (user || editingMyAvailability) ? "Import Google Calendar" : "Login with Google"}
                 </Button>
                 {editingMyAvailability ? (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    disabled={
-                      isSubmitting ||
-                      (!user && !name) ||
-                      selectedSlots.length === 0
-                    }
-                    onClick={handleSubmit}
-                    sx={{
-                      minWidth: "160px",
-                      textTransform: "none",
-                    }}
-                  >
-                    {isSubmitting
-                      ? (mySubmittedSlots.length > 0 ? "Updating..." : "Submitting...")
-                      : (mySubmittedSlots.length > 0 ? "Update" : "Submit")}
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      size="large"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        setEditingMyAvailability(false);
+                        setSelectedSlots([]);
+                        setShowOthersAvailability(true);
+                      }}
+                      sx={{
+                        minWidth: "10px",
+                        textTransform: "none",
+                        padding: '0px 12px',
+                        borderColor: 'divider',
+                        color: 'text.secondary',
+                        backgroundColor: 'background.paper',
+                        '&:hover': {
+                          borderColor: 'secondary.main',
+                          backgroundColor: 'action.hover',
+                        },
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      disabled={
+                        isSubmitting ||
+                        (!user && !name) ||
+                        selectedSlots.length === 0
+                      }
+                      onClick={handleSubmit}
+                      sx={{
+                        minWidth: mySubmittedSlots.length > 0 ? "90px" : "160px",
+                        textTransform: "none",
+                      }}
+                    >
+                      {isSubmitting
+                        ? (mySubmittedSlots.length > 0 ? "Updating..." : "Submitting...")
+                        : (mySubmittedSlots.length > 0 ? "Update" : "Submit")}
+                    </Button>
+                  </Box>
                 ) : (
                   <Button
                     variant="contained"
@@ -827,7 +856,7 @@ const EventPage: React.FC = () => {
                       setShowOthersAvailability(false);
                     }}
                     sx={{
-                      minWidth: "160px",
+                      minWidth: "180px",
                       textTransform: "none",
                       transition: "box-shadow 0.2s, background 0.2s",
                       boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
@@ -988,7 +1017,7 @@ const EventPage: React.FC = () => {
                                       bgcolor: "grey.400",
                                     }}
                                   >
-                                    <Person sx={{ fontSize: 16 }} />
+                                    {uniqueUser.charAt(0)}
                                   </Avatar>
                                 )}
                               </ListItemIcon>

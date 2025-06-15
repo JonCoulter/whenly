@@ -26,6 +26,7 @@ interface AvailabilityGridProps {
   onSlotLeave: () => void;
   onRequireEdit?: () => void;
   editingMyAvailability: boolean;
+  uniqueUserCount: number;
 }
 
 // Helper to get hour from 'HH:mm'
@@ -58,6 +59,7 @@ interface GridCellProps {
   onSlotLeave: () => void;
   event: any;
   editingMyAvailability: boolean;
+  uniqueUserCount: number;
 }
 
 const GridCell: React.FC<GridCellProps> = React.memo(({
@@ -80,9 +82,11 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
   onSlotLeave,
   event,
   editingMyAvailability,
+  uniqueUserCount,
 }) => {
   const availableCount = cell.availableUsers.length;
-  const intensity = Math.min(availableCount / 5, 1);
+  const denominator = uniqueUserCount > 0 ? uniqueUserCount : 1;
+  const intensity = Math.min(availableCount / denominator, 1);
   
   let bgColor = theme.palette.background.paper;
   if (isBeingDragged && dragMode === 'select') {
@@ -169,6 +173,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   onSlotLeave,
   onRequireEdit,
   editingMyAvailability,
+  uniqueUserCount,
 }) => {
   // Days (columns)
   let days = Object.keys(groupedByDate);
@@ -434,6 +439,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   onSlotLeave={onSlotLeave}
                   event={event}
                   editingMyAvailability={editingMyAvailability}
+                  uniqueUserCount={uniqueUserCount}
                 />
               );
             })
