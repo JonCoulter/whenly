@@ -16,7 +16,8 @@ import {
   FormControlLabel,
   useTheme,
   Snackbar,
-  Alert
+  Alert,
+  Divider
 } from '@mui/material';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/style.css';
@@ -181,10 +182,49 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
 
   return (
     <>
-      <Paper elevation={3} sx={{ p: 3, display: 'flex', flexDirection: 'column' }} {...paperProps}>
-        <Typography variant="h5" component="h2" gutterBottom sx={{ textAlign: { xs: 'center', md: 'left' } }}>
-          Create an Event
-        </Typography>
+      <Paper
+        elevation={3}
+        sx={{
+          p: { xs: 2, md: 4 },
+          display: 'flex',
+          flexDirection: 'column',
+          background: (theme) => `linear-gradient(135deg, ${theme.palette.background.paper} 80%, ${theme.palette.primary.light}10%)`,
+          borderRadius: 3,
+          boxShadow: { xs: 1, md: 3 },
+          minWidth: { md: 420 },
+          maxWidth: 600,
+          mx: 'auto',
+        }}
+        {...paperProps}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+          <Box
+            sx={{
+              width: 6,
+              height: 32,
+              borderRadius: 2,
+              background: (theme) => theme.palette.primary.main,
+              mr: 1,
+              boxShadow: 1,
+            }}
+          />
+          <Typography
+            variant="h5"
+            component="h2"
+            gutterBottom
+            sx={{
+              textAlign: { xs: 'left', md: 'left' },
+              fontWeight: 700,
+              color: 'primary.main',
+              letterSpacing: 0.5,
+              textShadow: '0 1px 2px rgba(25, 118, 210, 0.08)',
+              mb: 0,
+            }}
+          >
+            Create an Event
+          </Typography>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
         <Box
           component="form"
           onSubmit={handleSubmit}
@@ -400,7 +440,22 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
             color="primary"
             size="large"
             disabled={isSubmitting}
-            sx={{ alignSelf: 'center', width: { xs: '90%', md: 'auto' } }}
+            sx={{
+              alignSelf: 'center',
+              width: { xs: '90%', md: 'auto' },
+              boxShadow: 2,
+              borderRadius: 2,
+              fontWeight: 700,
+              fontSize: '1.08rem',
+              mt: 2,
+              px: 4,
+              py: 1.2,
+              transition: 'box-shadow 0.2s, background 0.2s',
+              '&:hover': {
+                boxShadow: 4,
+                backgroundColor: 'primary.dark',
+              },
+            }}
           >
             {isSubmitting ? 'Creating...' : 'Create Event'}
           </Button>

@@ -696,25 +696,37 @@ const EventPage: React.FC = () => {
             flexDirection: { xs: "column", md: "row" },
             alignItems: { xs: "flex-start", md: "flex-start" },
             justifyContent: "space-between",
-            mb: 1,
+            mb: 0,
             gap: { xs: 0.5, md: 0 },
             width: "100%",
           }}
         >
           <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="h4"
-              component="h1"
-              sx={{
-                fontWeight: 400,
-                fontSize: "2.5rem",
-                mb: 0.5,
-                textAlign: { xs: "left", md: "left" },
-                width: "100%",
-              }}
-            >
-              {event?.name || "Event Details"}
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+                sx={{
+                  width: 6,
+                  height: 36,
+                  borderRadius: 2,
+                  background: (theme) => theme.palette.primary.main,
+                  mr: 0.5,
+                  boxShadow: 1,
+                }}
+              />
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  fontWeight: 400,
+                  fontSize: "2.5rem",
+                  mb: 0.5,
+                  textAlign: { xs: "left", md: "left" },
+                  width: "100%",
+                }}
+              >
+                {event?.name || "Event Details"}
+              </Typography>
+            </Box>
             {event?.eventType === "specificDays" && (
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
@@ -900,30 +912,46 @@ const EventPage: React.FC = () => {
         </Box>
 
         {/* Main Content Grid */}
-        <Grid container spacing={3}>
+        <Grid container spacing={3} >
           <Grid size={{ xs: 12, md: 3 }}>
             {/* Responses Panel */}
             {(showOthersAvailability || responses) && (
               <Box
                 sx={{
-                  mb: { xs: 4, md: 0 },
+                  mb: { xs: 1, md: 0 },
+                  mt: { xs: 0, md: 5.8},
                   width: { xs: "100%", md: "auto" },
                   pr: { xs: 0, md: 2 },
+                  borderRadius: 3,
+                  boxShadow: { xs: 1, md: 2 },
+                  p: { xs: 2, md: 3 },
+                  minHeight: 320,
                 }}
               >
                 <Box
                   sx={{
                     display: "flex",
-                    justifyContent: "space-between",
                     alignItems: "center",
-                    my: 1,
+                    gap: 1.5,
+                    mb: 1.5,
                   }}
                 >
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 28,
+                      borderRadius: 2,
+                      background: (theme) => theme.palette.primary.main,
+                      boxShadow: 1,
+                    }}
+                  />
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 500,
-                      fontSize: { xs: "1.1rem", md: "1.25rem" },
+                      fontSize: { xs: "1.1rem", md: "1.3rem" },
+                      letterSpacing: 0.5,
+                      color: "text.primary",
+                      textShadow: "0 1px 2px rgba(25, 118, 210, 0.08)",
                     }}
                   >
                     Responses
@@ -954,6 +982,7 @@ const EventPage: React.FC = () => {
                     },
                   }}
                 />
+                <Divider sx={{ my: 1.5 }} />
                 <Box>
                   {/* Top label */}
                   {hoveredSlotInfo ? (
@@ -983,7 +1012,6 @@ const EventPage: React.FC = () => {
                       Hover to view availability
                     </Typography>
                   )}
-                  <Divider sx={{ mb: 1 }} />
                   {/* Single list of all responders, with hover styling */}
                   {allUniqueUsers.size > 0 ? (
                     <List dense disablePadding>
@@ -994,12 +1022,25 @@ const EventPage: React.FC = () => {
                             hoveredSlotInfo.availableUsers.includes(uniqueUser);
                         }
                         return (
-                          <ListItem key={uniqueUser} sx={{ py: 0.5 }}>
+                          <ListItem
+                            key={uniqueUser}
+                            sx={{
+                              py: 0.5,
+                              borderRadius: 2,
+                              transition: "background 0.2s, box-shadow 0.2s",
+                              "&:hover": {
+                                background: (theme) =>
+                                  theme.palette.action.hover,
+                                boxShadow: 2,
+                              },
+                              mb: 0.5,
+                            }}
+                          >
                             <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 } }}>
                               <Avatar
                                 sx={{
-                                  width: { xs: 20, md: 24 },
-                                  height: { xs: 20, md: 24 },
+                                  width: { xs: 22, md: 28 },
+                                  height: { xs: 22, md: 28 },
                                   bgcolor: hoveredSlotInfo
                                     ? isAvailable
                                       ? "primary.main"
@@ -1008,8 +1049,12 @@ const EventPage: React.FC = () => {
                                   opacity:
                                     hoveredSlotInfo && !isAvailable ? 0.7 : 1,
                                   color: "#fff",
-                                  fontWeight: 600,
-                                  fontSize: { xs: "0.8rem", md: "0.9rem" },
+                                  fontWeight: 700,
+                                  fontSize: { xs: "0.9rem", md: "1.1rem" },
+                                  border: (theme) =>
+                                    `2px solid ${theme.palette.background.paper}`,
+                                  boxShadow: 1,
+                                  transition: "box-shadow 0.2s, border 0.2s",
                                 }}
                               >
                                 {uniqueUser.charAt(0)}
@@ -1026,14 +1071,27 @@ const EventPage: React.FC = () => {
                                 sx: hoveredSlotInfo
                                   ? isAvailable
                                     ? {
-                                        fontSize: { xs: "0.95rem", md: "1rem" },
+                                        fontSize: {
+                                          xs: "0.98rem",
+                                          md: "1.08rem",
+                                        },
+                                        fontWeight: 500,
                                       }
                                     : {
                                         color: "text.disabled",
                                         textDecoration: "line-through",
-                                        fontSize: { xs: "0.95rem", md: "1rem" },
+                                        fontSize: {
+                                          xs: "0.98rem",
+                                          md: "1.08rem",
+                                        },
                                       }
-                                  : { fontSize: { xs: "0.95rem", md: "1rem" } },
+                                  : {
+                                      fontSize: {
+                                        xs: "0.98rem",
+                                        md: "1.08rem",
+                                      },
+                                      fontWeight: 500,
+                                    },
                               }}
                             />
                           </ListItem>
@@ -1062,7 +1120,6 @@ const EventPage: React.FC = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  mb: 3,
                 }}
               ></Box>
 
