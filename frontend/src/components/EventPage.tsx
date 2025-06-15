@@ -28,6 +28,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Stack,
 } from "@mui/material";
 import {
   format,
@@ -292,7 +293,9 @@ const EventPage: React.FC = () => {
   // On mount, load last submitted guest name and availability (runs only once)
   useEffect(() => {
     if (!user && eventId) {
-      const lastGuestName = storageService.getItem<string>(`guestName_${eventId}`);
+      const lastGuestName = storageService.getItem<string>(
+        `guestName_${eventId}`
+      );
       if (lastGuestName) {
         setName(lastGuestName);
         const key = `availability_${eventId}_${lastGuestName}`;
@@ -357,7 +360,7 @@ const EventPage: React.FC = () => {
       setMySubmittedSlots(formattedSlots);
       // Save to guest storage only for non-logged-in users
       if (!user) {
-        const key = eventId && name ? `availability_${eventId}_${name}` : '';
+        const key = eventId && name ? `availability_${eventId}_${name}` : "";
         if (key) {
           storageService.setItem(key, formattedSlots);
           // Save last used name
@@ -377,7 +380,14 @@ const EventPage: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, selectedSlots, eventId, user, generateFormattedSlots, mySubmittedSlots]);
+  }, [
+    name,
+    selectedSlots,
+    eventId,
+    user,
+    generateFormattedSlots,
+    mySubmittedSlots,
+  ]);
 
   // Memoize the handleSlotSelection function
   const handleSlotSelection = useCallback((slot: string) => {
@@ -402,7 +412,8 @@ const EventPage: React.FC = () => {
 
     // Collect all slotIds for this user
     const userResponses = responses.responses.filter(
-      (response: any) => response.userName === nameToLookup && response.isAvailable
+      (response: any) =>
+        response.userName === nameToLookup && response.isAvailable
     );
     const newSubmittedSlots = userResponses.map((r: any) => r.slotId);
 
@@ -492,7 +503,7 @@ const EventPage: React.FC = () => {
   // Add function to fetch calendar events
   const fetchCalendarEvents = async () => {
     if (!event) return;
-    
+
     if (!user) {
       setIsSignInModalOpen(true);
       return;
@@ -501,130 +512,145 @@ const EventPage: React.FC = () => {
     setEditingMyAvailability(true);
     setSelectedSlots(mySubmittedSlots);
     setShowOthersAvailability(false);
-    
+
     setIsImporting(true);
     try {
       // Get date range based on event type
       let startDate, endDate;
-      
-      if (event.eventType === 'specificDays' && event.specificDays?.length > 0) {
+
+      if (
+        event.eventType === "specificDays" &&
+        event.specificDays?.length > 0
+      ) {
         startDate = event.specificDays[0];
         endDate = event.specificDays[event.specificDays.length - 1];
       } else {
         // For days of week events, use next 2 weeks
         const today = new Date();
-        startDate = format(today, 'yyyy-MM-dd');
-        endDate = format(addDays(today, 14), 'yyyy-MM-dd');
+        startDate = format(today, "yyyy-MM-dd");
+        endDate = format(addDays(today, 14), "yyyy-MM-dd");
       }
-      
+
       const response = await fetch(
         `${config.apiUrl}/api/calendar/events?startDate=${startDate}&endDate=${endDate}`,
-        { credentials: 'include' }
+        { credentials: "include" }
       );
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch calendar events');
+        throw new Error("Failed to fetch calendar events");
       }
-      
+
       const data = await response.json();
       if (!data.success) {
         throw new Error(data.message);
       }
-      
+
       // Process calendar events and update selected slots
       const calendarEvents = data.data.events as CalendarEvent[];
       const newSelectedSlots = new Set(selectedSlots);
-      
+
       // For each time slot in our event
-      processedTimeSlots.forEach(slot => {
+      processedTimeSlots.forEach((slot) => {
         // Create a date object for the slot's start time
         let slotStart: Date;
         if (slot.dateObj) {
           slotStart = slot.dateObj;
         } else if (slot.date) {
           // For specific days events, create date in local timezone
-          const [year, month, day] = slot.date.split('-').map(Number);
-          const [hours, minutes] = slot.time.split(':').map(Number);
+          const [year, month, day] = slot.date.split("-").map(Number);
+          const [hours, minutes] = slot.time.split(":").map(Number);
           slotStart = new Date(year, month - 1, day, hours, minutes);
         } else {
           // For days of week events, use today's date
           const today = new Date();
-          const [hours, minutes] = slot.time.split(':').map(Number);
-          slotStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+          const [hours, minutes] = slot.time.split(":").map(Number);
+          slotStart = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+            hours,
+            minutes
+          );
         }
-        
+
         const slotEnd = addMinutes(slotStart, 15); // 15-minute slots
-        
+
         // Check if this slot overlaps with any calendar event
-        const hasOverlap = calendarEvents.some(event => {
+        const hasOverlap = calendarEvents.some((event) => {
           // Parse the ISO dates with timezone information
           const eventStart = new Date(event.start);
           const eventEnd = new Date(event.end);
-          
+
           // Convert all dates to UTC for comparison
-          const slotStartUTC = new Date(Date.UTC(
-            slotStart.getFullYear(),
-            slotStart.getMonth(),
-            slotStart.getDate(),
-            slotStart.getHours(),
-            slotStart.getMinutes()
-          ));
-          
-          const slotEndUTC = new Date(Date.UTC(
-            slotEnd.getFullYear(),
-            slotEnd.getMonth(),
-            slotEnd.getDate(),
-            slotEnd.getHours(),
-            slotEnd.getMinutes()
-          ));
-          
-          const eventStartUTC = new Date(Date.UTC(
-            eventStart.getFullYear(),
-            eventStart.getMonth(),
-            eventStart.getDate(),
-            eventStart.getHours(),
-            eventStart.getMinutes()
-          ));
-          
-          const eventEndUTC = new Date(Date.UTC(
-            eventEnd.getFullYear(),
-            eventEnd.getMonth(),
-            eventEnd.getDate(),
-            eventEnd.getHours(),
-            eventEnd.getMinutes()
-          ));
-          
-          const overlaps = (
+          const slotStartUTC = new Date(
+            Date.UTC(
+              slotStart.getFullYear(),
+              slotStart.getMonth(),
+              slotStart.getDate(),
+              slotStart.getHours(),
+              slotStart.getMinutes()
+            )
+          );
+
+          const slotEndUTC = new Date(
+            Date.UTC(
+              slotEnd.getFullYear(),
+              slotEnd.getMonth(),
+              slotEnd.getDate(),
+              slotEnd.getHours(),
+              slotEnd.getMinutes()
+            )
+          );
+
+          const eventStartUTC = new Date(
+            Date.UTC(
+              eventStart.getFullYear(),
+              eventStart.getMonth(),
+              eventStart.getDate(),
+              eventStart.getHours(),
+              eventStart.getMinutes()
+            )
+          );
+
+          const eventEndUTC = new Date(
+            Date.UTC(
+              eventEnd.getFullYear(),
+              eventEnd.getMonth(),
+              eventEnd.getDate(),
+              eventEnd.getHours(),
+              eventEnd.getMinutes()
+            )
+          );
+
+          const overlaps =
             (slotStartUTC >= eventStartUTC && slotStartUTC < eventEndUTC) || // Slot starts during event
             (slotEndUTC > eventStartUTC && slotEndUTC <= eventEndUTC) || // Slot ends during event
-            (slotStartUTC <= eventStartUTC && slotEndUTC >= eventEndUTC) // Slot completely contains event
-          );
-          
+            (slotStartUTC <= eventStartUTC && slotEndUTC >= eventEndUTC); // Slot completely contains event
+
           return overlaps;
         });
-        
+
         // If no overlap, mark the slot as available
         if (!hasOverlap) {
           newSelectedSlots.add(slot.id);
-        }
-        else {
+        } else {
           newSelectedSlots.delete(slot.id);
         }
       });
-      
+
       setSelectedSlots(Array.from(newSelectedSlots));
-      
+
       setSnackbar({
         open: true,
-        message: 'Calendar events imported successfully',
-        severity: 'success'
+        message: "Calendar events imported successfully",
+        severity: "success",
       });
     } catch (error) {
-      console.error('Error importing calendar events:', error);
+      console.error("Error importing calendar events:", error);
       setSnackbar({
         open: true,
-        message: 'Failed to import calendar events',
-        severity: 'error'
+        message: "Failed to import calendar events",
+        severity: "error",
       });
     } finally {
       setIsImporting(false);
@@ -663,203 +689,228 @@ const EventPage: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 1 }}>
       <Paper elevation={2} sx={{ p: 3 }}>
-        {/* Title Section */}
-        <Box>
-          <Box
+        {/* Title and Button Row (responsive) */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { xs: "flex-start", md: "flex-start" },
+            justifyContent: "space-between",
+            mb: 1,
+            gap: { xs: 0.5, md: 0 },
+            width: "100%",
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{
+                fontWeight: 400,
+                fontSize: "2.5rem",
+                mb: 0.5,
+                textAlign: { xs: "left", md: "left" },
+                width: "100%",
+              }}
+            >
+              {event?.name || "Event Details"}
+            </Typography>
+            {event?.eventType === "specificDays" && (
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+              >
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.5, mr: 1 }}
+                >
+                  {(() => {
+                    if (!event?.specificDays?.length) {
+                      return null;
+                    }
+
+                    let startDate = event.specificDays[0];
+                    let endDate =
+                      event.specificDays[event.specificDays.length - 1];
+
+                    if (event.specificDays.length > 1) {
+                      const sorted = [...event.specificDays].sort(
+                        (a, b) => new Date(a).getTime() - new Date(b).getTime()
+                      );
+                      startDate = sorted[0];
+                      endDate = sorted[sorted.length - 1];
+                    }
+
+                    return (
+                      <>
+                        {format(parseISO(startDate), "M/d")} -{" "}
+                        {format(parseISO(endDate), "M/d")}
+                      </>
+                    );
+                  })()}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          {/* Button Stack: centered vertically on mobile, top-aligned on desktop */}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1}
             sx={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              mb: 1,
+              width: { xs: "100%", md: "auto" },
+              minWidth: { md: 350 },
+              alignItems: { xs: "center", md: "flex-start" },
+              justifyContent: { xs: "center", md: "flex-start" },
+              mt: { xs: 2, md: 0 }, // add margin top on mobile for spacing
+              mb: { xs: 2, md: 0 }, // optional: margin bottom on mobile for spacing
+              height: { xs: "100%", md: "auto" },
             }}
           >
-            <Box>
-              <Typography
-                variant="h4"
-                component="h1"
+            <Button
+              variant="outlined"
+              color="primary"
+              size="large"
+              startIcon={<LinkIcon />}
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setSnackbar({
+                  open: true,
+                  message: "Event link copied to clipboard!",
+                  severity: "success",
+                });
+              }}
+              sx={{
+                textTransform: "none",
+                borderColor: "divider",
+                color: "text.secondary",
+                width: { xs: "100%", md: "auto" },
+                "&:hover": {
+                  borderColor: "primary.main",
+                  backgroundColor: "transparent",
+                },
+              }}
+            >
+              Copy link
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="large"
+              startIcon={<CalendarMonthIcon />}
+              onClick={user ? fetchCalendarEvents : handleGoogleLogin}
+              disabled={isImporting}
+              sx={{
+                textTransform: "none",
+                borderColor: "divider",
+                color: "text.secondary",
+                width: { xs: "100%", md: "auto" },
+                "&:hover": {
+                  borderColor: "primary.main",
+                  backgroundColor: "transparent",
+                },
+              }}
+            >
+              {isImporting
+                ? "Importing..."
+                : user || editingMyAvailability
+                ? "Import Google Calendar"
+                : "Login with Google"}
+            </Button>
+            {editingMyAvailability ? (
+              <Box
                 sx={{
-                  fontWeight: 400,
-                  fontSize: "2.5rem",
-                  mb: 0.5,
+                  display: "flex",
+                  gap: 1,
+                  width: { xs: "100%", md: "auto" },
                 }}
               >
-                {event?.name || "Event Details"}
-              </Typography>
-              {event?.eventType === "specificDays" && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ lineHeight: 1.5, mr: 1 }}
-                  >
-                    {(() => {
-                      if (!event?.specificDays?.length) {
-                        return null;
-                      }
-
-                      let startDate = event.specificDays[0];
-                      let endDate = event.specificDays[event.specificDays.length - 1];
-
-                      if (event.specificDays.length > 1) {
-                        const sorted = [...event.specificDays].sort(
-                          (a, b) => new Date(a).getTime() - new Date(b).getTime()
-                        );
-                        startDate = sorted[0];
-                        endDate = sorted[sorted.length - 1];
-                      }
-
-                      return (
-                        <>
-                          {format(parseISO(startDate), "M/d")} -{" "}
-                          {format(parseISO(endDate), "M/d")}
-                        </>
-                      );
-                    })()}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="large"
-                  startIcon={<LinkIcon />}
+                <IconButton
+                  disabled={isSubmitting}
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setSnackbar({
-                      open: true,
-                      message: "Event link copied to clipboard!",
-                      severity: "success",
-                    });
+                    setEditingMyAvailability(false);
+                    setSelectedSlots([]);
+                    setShowOthersAvailability(true);
                   }}
                   sx={{
-                    textTransform: "none",
-                    borderColor: "divider",
                     color: "text.secondary",
                     "&:hover": {
-                      borderColor: "primary.main",
-                      backgroundColor: "transparent",
+                      color: "secondary.main",
                     },
+                    width: { xs: 40, md: 40 },
+                    height: { xs: 40, md: 40 },
                   }}
                 >
-                  Copy link
-                </Button>
+                  <CloseIcon />
+                </IconButton>
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   color="primary"
                   size="large"
-                  startIcon={<CalendarMonthIcon />}
-                  onClick={user ? fetchCalendarEvents : handleGoogleLogin}
-                  disabled={isImporting}
+                  disabled={
+                    isSubmitting ||
+                    (!user && !name) ||
+                    selectedSlots.length === 0
+                  }
+                  onClick={handleSubmit}
                   sx={{
+                    minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
                     textTransform: "none",
-                    borderColor: "divider",
-                    color: "text.secondary",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      backgroundColor: "transparent",
-                    },
+                    width: { xs: "100%", md: "auto" },
                   }}
                 >
-                  {isImporting ? "Importing..." : (user || editingMyAvailability) ? "Import Google Calendar" : "Login with Google"}
+                  {isSubmitting
+                    ? mySubmittedSlots.length > 0
+                      ? "Updating..."
+                      : "Submitting..."
+                    : mySubmittedSlots.length > 0
+                    ? "Update"
+                    : "Submit"}
                 </Button>
-                {editingMyAvailability ? (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton
-                      disabled={isSubmitting}
-                      onClick={() => {
-                        setEditingMyAvailability(false);
-                        setSelectedSlots([]);
-                        setShowOthersAvailability(true);
-                      }}
-                      sx={{
-                        color: 'text.secondary',
-                        '&:hover': {
-                          color: 'secondary.main',
-                        },
-                      }}
-                    >
-                      <CloseIcon />
-                    </IconButton>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      disabled={
-                        isSubmitting ||
-                        (!user && !name) ||
-                        selectedSlots.length === 0
-                      }
-                      onClick={handleSubmit}
-                      sx={{
-                        minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
-                        textTransform: "none",
-                      }}
-                    >
-                      {isSubmitting
-                        ? (mySubmittedSlots.length > 0 ? "Updating..." : "Submitting...")
-                        : (mySubmittedSlots.length > 0 ? "Update" : "Submit")}
-                    </Button>
-                  </Box>
-                ) : (
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    onClick={() => {
-                      setEditingMyAvailability(true);
-                      setSelectedSlots(mySubmittedSlots);
-                      setShowOthersAvailability(false);
-                    }}
-                    sx={{
-                      minWidth: "160px",
-                      textTransform: "none",
-                      transition: "box-shadow 0.2s, background 0.2s",
-                      boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
-                      backgroundColor: flashEditButton ? "primary.light" : undefined,
-                      opacity: flashEditButton ? 0.8 : 1,
-                    }}
-                  >
-                    {mySubmittedSlots.length > 0 ? "Edit availability" : "Enter availability"}
-                  </Button>
-                )}
               </Box>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showOthersAvailability}
-                    onChange={(e) =>
-                      setShowOthersAvailability(e.target.checked)
-                    }
-                    color="primary"
-                    size="small"
-                  />
-                }
-                label={
-                  <Typography variant="body2" color="text.secondary">
-                    Show others' availability
-                  </Typography>
-                }
-                sx={{
-                  m: 0,
-                  "& .MuiFormControlLabel-label": {
-                    fontSize: "0.875rem",
-                  },
+            ) : (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={() => {
+                  setEditingMyAvailability(true);
+                  setSelectedSlots(mySubmittedSlots);
+                  setShowOthersAvailability(false);
                 }}
-              />
-            </Box>
-          </Box>
+                sx={{
+                  minWidth: "160px",
+                  textTransform: "none",
+                  transition: "box-shadow 0.2s, background 0.2s",
+                  boxShadow: flashEditButton
+                    ? "0 0 0 4px #1976d2aa"
+                    : undefined,
+                  backgroundColor: flashEditButton
+                    ? "primary.light"
+                    : undefined,
+                  opacity: flashEditButton ? 0.8 : 1,
+                  width: { xs: "100%", md: "auto" },
+                }}
+              >
+                {mySubmittedSlots.length > 0
+                  ? "Edit availability"
+                  : "Enter availability"}
+              </Button>
+            )}
+          </Stack>
         </Box>
 
         {/* Main Content Grid */}
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 3 }}>
             {/* Responses Panel */}
-            {showOthersAvailability && responses && (
-              <Box sx={{ mb: { xs: 4, md: 0 } }}>
+            {(showOthersAvailability || responses) && (
+              <Box
+                sx={{
+                  mb: { xs: 4, md: 0 },
+                  width: { xs: "100%", md: "auto" },
+                  pr: { xs: 0, md: 2 },
+                }}
+              >
                 <Box
                   sx={{
                     display: "flex",
@@ -868,18 +919,54 @@ const EventPage: React.FC = () => {
                     my: 1,
                   }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: { xs: "1.1rem", md: "1.25rem" },
+                    }}
+                  >
                     Responses
                   </Typography>
                 </Box>
+                {/* Show others' availability toggle moved here */}
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showOthersAvailability}
+                      onChange={(e) =>
+                        setShowOthersAvailability(e.target.checked)
+                      }
+                      color="primary"
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" color="text.secondary">
+                      Show others' availability
+                    </Typography>
+                  }
+                  sx={{
+                    m: 0,
+                    mb: 1,
+                    "& .MuiFormControlLabel-label": {
+                      fontSize: "0.875rem",
+                    },
+                  }}
+                />
                 <Box>
                   {/* Top label */}
                   {hoveredSlotInfo ? (
                     <Typography
                       variant="subtitle2"
-                      sx={{ mb: 1, color: "text.secondary" }}
+                      sx={{
+                        mb: 1,
+                        color: "text.secondary",
+                        fontSize: { xs: "0.9rem", md: "1rem" },
+                      }}
                     >
-                      {hoveredSlotInfo.dayLabel} on {format(
+                      {hoveredSlotInfo.dayLabel} on{" "}
+                      {format(
                         parse(hoveredSlotInfo.time, "HH:mm", new Date()),
                         "h:mm a"
                       )}
@@ -887,7 +974,11 @@ const EventPage: React.FC = () => {
                   ) : (
                     <Typography
                       variant="subtitle2"
-                      sx={{ mb: 1, color: "text.secondary" }}
+                      sx={{
+                        mb: 1,
+                        color: "text.secondary",
+                        fontSize: { xs: "0.9rem", md: "1rem" },
+                      }}
                     >
                       Hover to view availability
                     </Typography>
@@ -899,27 +990,26 @@ const EventPage: React.FC = () => {
                       {Array.from(allUniqueUsers).map((uniqueUser) => {
                         let isAvailable = false;
                         if (hoveredSlotInfo) {
-                          isAvailable = hoveredSlotInfo.availableUsers.includes(uniqueUser);
+                          isAvailable =
+                            hoveredSlotInfo.availableUsers.includes(uniqueUser);
                         }
                         return (
-                          <ListItem
-                            key={uniqueUser}
-                            sx={{ py: 0.5 }}
-                          >
-                            <ListItemIcon sx={{ minWidth: 36 }}>
+                          <ListItem key={uniqueUser} sx={{ py: 0.5 }}>
+                            <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 } }}>
                               <Avatar
                                 sx={{
-                                  width: 24,
-                                  height: 24,
+                                  width: { xs: 20, md: 24 },
+                                  height: { xs: 20, md: 24 },
                                   bgcolor: hoveredSlotInfo
                                     ? isAvailable
-                                      ? 'primary.main'
-                                      : 'secondary.main'
-                                    : 'grey.400',
-                                  opacity: hoveredSlotInfo && !isAvailable ? 0.7 : 1,
-                                  color: '#fff',
+                                      ? "primary.main"
+                                      : "secondary.main"
+                                    : "grey.400",
+                                  opacity:
+                                    hoveredSlotInfo && !isAvailable ? 0.7 : 1,
+                                  color: "#fff",
                                   fontWeight: 600,
-                                  fontSize: '0.9rem',
+                                  fontSize: { xs: "0.8rem", md: "0.9rem" },
                                 }}
                               >
                                 {uniqueUser.charAt(0)}
@@ -927,15 +1017,23 @@ const EventPage: React.FC = () => {
                             </ListItemIcon>
                             <ListItemText
                               primary={uniqueUser}
-                              onMouseEnter={() => setHoveredUserName(uniqueUser)}
+                              onMouseEnter={() =>
+                                setHoveredUserName(uniqueUser)
+                              }
                               onMouseLeave={() => setHoveredUserName(null)}
                               primaryTypographyProps={{
                                 variant: "body2",
                                 sx: hoveredSlotInfo
                                   ? isAvailable
-                                    ? { }
-                                    : { color: 'text.disabled', textDecoration: 'line-through' }
-                                  : {},
+                                    ? {
+                                        fontSize: { xs: "0.95rem", md: "1rem" },
+                                      }
+                                    : {
+                                        color: "text.disabled",
+                                        textDecoration: "line-through",
+                                        fontSize: { xs: "0.95rem", md: "1rem" },
+                                      }
+                                  : { fontSize: { xs: "0.95rem", md: "1rem" } },
                               }}
                             />
                           </ListItem>
@@ -943,7 +1041,11 @@ const EventPage: React.FC = () => {
                       })}
                     </List>
                   ) : (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
+                    >
                       No one has responded to this event yet.
                     </Typography>
                   )}
@@ -962,9 +1064,7 @@ const EventPage: React.FC = () => {
                   alignItems: "center",
                   mb: 3,
                 }}
-              >
-                
-              </Box>
+              ></Box>
 
               {editingMyAvailability && !user && (
                 <Box sx={{ mb: 2 }}>
@@ -1005,7 +1105,7 @@ const EventPage: React.FC = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
