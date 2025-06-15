@@ -260,7 +260,6 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
 
           {/* Selection area - consistent height container */}
           <Box sx={{ 
-            minHeight: 320, 
             display: 'flex', 
             flexDirection: 'column',
             justifyContent: 'center',
@@ -328,47 +327,66 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
 
               {/* Days of the Week Selector (when daysOfWeek is selected) */}
               {eventType === 'daysOfWeek' && (
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: 1,
-                  width: '100%'
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '100%',
                 }}>
-                  <Typography variant="subtitle1" sx={{ textAlign: 'center' }}>Select Days of the Week</Typography>
-                  <Box sx={{ 
-                    border: '1px dashed',
-                    borderColor: submitError && selectedDaysOfWeek.length === 0 ? 'error.main' : 'divider',
-                    borderRadius: 1,
-                    p: 2,
-                    minHeight: 160,
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {/* Day buttons - display in a similar style to calendar days */}
-                    <Typography 
-                      color={submitError && selectedDaysOfWeek.length === 0 ? 'error' : 'text.secondary'} 
-                      gutterBottom
+                  <Typography variant="subtitle1" sx={{ textAlign: 'center', fontWeight: 500, mb: 1 }}>
+                    Select Days of the Week
+                  </Typography>
+                  <Box
+                    sx={{
+                      maxWidth: 340,
+                      width: '100%',
+                      mx: 'auto',
+                      p: 2,
+                      border: '1px solid',
+                      borderColor: submitError && selectedDaysOfWeek.length === 0 ? 'error.main' : 'divider',
+                      borderRadius: 2,
+                      backgroundColor: 'background.paper',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      boxShadow: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        justifyContent: 'center',
+                        mb: 1,
+                      }}
                     >
-                      Select days that work for you
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
                       {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day) => (
                         <Button
                           key={day}
-                          variant={selectedDaysOfWeek.includes(day) ? "contained" : "outlined"}
+                          variant={selectedDaysOfWeek.includes(day) ? 'contained' : 'outlined'}
                           size="small"
                           onClick={() => handleDayOfWeekToggle(day)}
+                          sx={{
+                            minWidth: 38,
+                            px: 1.5,
+                            fontWeight: 600,
+                            borderRadius: 2,
+                            fontSize: '0.95rem',
+                            boxShadow: selectedDaysOfWeek.includes(day) ? 2 : undefined,
+                            backgroundColor: selectedDaysOfWeek.includes(day) ? 'primary.main' : undefined,
+                            color: selectedDaysOfWeek.includes(day) ? '#fff' : undefined,
+                            borderColor: selectedDaysOfWeek.includes(day) ? 'primary.main' : 'divider',
+                            '&:hover': {
+                              backgroundColor: selectedDaysOfWeek.includes(day) ? 'primary.dark' : 'action.hover',
+                              borderColor: 'primary.main',
+                            },
+                          }}
                         >
                           {day.substring(0, 3)}
                         </Button>
                       ))}
                     </Box>
-                    <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary' }}>
-                      Selected days: {selectedDaysOfWeek.length > 0 ? selectedDaysOfWeek.join(', ') : 'None'}
-                    </Typography>
                   </Box>
                 </Box>
               )}
