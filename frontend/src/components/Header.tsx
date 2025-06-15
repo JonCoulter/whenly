@@ -130,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({
                           onChange={toggleTheme}
                           icon={<Brightness7Icon />}
                           checkedIcon={<Brightness3Icon />}
-                          sx={{ mr: 2 }}
+                          sx={{ mr: 2, pb: 1 }}
                         />
                       }
                       label={isDarkMode ? "Dark Mode" : "Light Mode"}

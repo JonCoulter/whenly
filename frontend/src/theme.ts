@@ -8,7 +8,7 @@ const baseColors = {
     main: '#10A37F',
   },
   secondary: {
-    main: '#F5A623',
+    main: '#FF5623',
   },
 };
 

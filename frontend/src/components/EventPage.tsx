@@ -120,6 +120,7 @@ const EventPage: React.FC = () => {
     dayLabel: string;
   } | null>(null);
   const [flashEditButton, setFlashEditButton] = useState(false);
+  const [hoveredUserName, setHoveredUserName] = useState<string | null>(null);
 
   // Ref to hold the current name value for useEffects without being a dependency
   const nameRef = useRef(name);
@@ -901,10 +902,27 @@ const EventPage: React.FC = () => {
                           isAvailable = hoveredSlotInfo.availableUsers.includes(uniqueUser);
                         }
                         return (
-                          <ListItem key={uniqueUser} sx={{ py: 0.5 }}>
+                          <ListItem
+                            key={uniqueUser}
+                            sx={{ py: 0.5 }}
+                            onMouseEnter={() => setHoveredUserName(uniqueUser)}
+                            onMouseLeave={() => setHoveredUserName(null)}
+                          >
                             <ListItemIcon sx={{ minWidth: 36 }}>
                               <Avatar
-                                sx={{ width: 24, height: 24, bgcolor: "grey.400" }}
+                                sx={{
+                                  width: 24,
+                                  height: 24,
+                                  bgcolor: hoveredSlotInfo
+                                    ? isAvailable
+                                      ? 'primary.main'
+                                      : 'secondary.main'
+                                    : 'grey.400',
+                                  opacity: hoveredSlotInfo && !isAvailable ? 0.7 : 1,
+                                  color: '#fff',
+                                  fontWeight: 600,
+                                  fontSize: '0.9rem',
+                                }}
                               >
                                 {uniqueUser.charAt(0)}
                               </Avatar>
@@ -976,6 +994,7 @@ const EventPage: React.FC = () => {
                 onSlotHover={handleSlotHover}
                 onSlotLeave={handleSlotLeave}
                 onRequireEdit={handleRequireEdit}
+                highlightUserName={hoveredUserName}
               />
             </Box>
           </Grid>

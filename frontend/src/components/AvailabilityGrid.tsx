@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
 import { format, parse, addMinutes } from 'date-fns';
+import { darken } from '@mui/material/styles';
 
 interface TimeSlot {
   id: string;
@@ -27,6 +28,7 @@ interface AvailabilityGridProps {
   onRequireEdit?: () => void;
   editingMyAvailability: boolean;
   uniqueUserCount: number;
+  highlightUserName?: string | null;
 }
 
 // Helper to get hour from 'HH:mm'
@@ -60,6 +62,8 @@ interface GridCellProps {
   event: any;
   editingMyAvailability: boolean;
   uniqueUserCount: number;
+  isHighlightedUserAvailable: boolean;
+  highlightUserName?: string | null;
 }
 
 const GridCell: React.FC<GridCellProps> = React.memo(({
@@ -83,33 +87,52 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
   event,
   editingMyAvailability,
   uniqueUserCount,
+  isHighlightedUserAvailable,
+  highlightUserName,
 }) => {
   const availableCount = cell.availableUsers.length;
   const denominator = uniqueUserCount > 0 ? uniqueUserCount : 1;
   const intensity = Math.min(availableCount / denominator, 1);
   
   let bgColor = theme.palette.background.paper;
-  if (isBeingDragged && dragMode === 'select') {
-    bgColor = theme.palette.primary.light;
-  } else if (isBeingDragged && dragMode === 'deselect') {
-    bgColor = theme.palette.action.selected;
-  } else if (isSelected && !showOthersAvailability) {
-    bgColor = theme.palette.primary.main;
-  } else if (showOthersAvailability && availableCount > 0) {
-    bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.75})`;
+  if (highlightUserName) {
+    if (isHighlightedUserAvailable) {
+      let opacity = 0.1 + Math.min(1 / denominator, 1) * 0.75;
+      bgColor = `rgba(25, 118, 210, ${opacity})`;
+    }
+  } else {
+    if (isBeingDragged && dragMode === 'select') {
+      bgColor = theme.palette.primary.light;
+    } else if (isBeingDragged && dragMode === 'deselect') {
+      bgColor = theme.palette.action.selected;
+    } else if (isSelected && !showOthersAvailability) {
+      bgColor = theme.palette.primary.main;
+    } else if (showOthersAvailability && availableCount > 0) {
+      bgColor = `rgba(25, 118, 210, ${0.1 + intensity * 0.75})`;
+    }
   }
 
   // Border logic for outline/merge
   let border: React.CSSProperties = {};
-  if (editingMyAvailability && isSelected) {
+  if (highlightUserName) {
+    border = {
+      borderLeft: '1px solid ' + theme.palette.divider,
+      borderRight: '1px solid ' + theme.palette.divider,
+      borderBottom: 'none',
+      borderTop: rowIdx > 0 && rowIdx % 2 === 0 ? '1px solid ' + theme.palette.divider : 'none',
+    };
+  } else if (editingMyAvailability && isSelected) {
     const isAboveSelected = rowIdx > 0 && selectedSlotsSet.has(grid[rowIdx - 1][colIdx].slotId);
     const isBelowSelected = rowIdx < grid.length - 1 && selectedSlotsSet.has(grid[rowIdx + 1][colIdx].slotId);
     const isLastRow = rowIdx === grid.length - 1;
-    const isLastCol = colIdx === daysLength - 1;
     const is30MinIncrement = rowIdx > 0 && rowIdx % 2 === 0;
+    const verticalBorder =
+      showOthersAvailability
+        ? '2px solid ' + theme.palette.primary.main
+        : '1px solid ' + theme.palette.divider;
     border = {
-      borderLeft: '2px solid ' + theme.palette.primary.main,
-      borderRight: isLastCol ? '2px solid ' + theme.palette.primary.main : '2px solid ' + theme.palette.primary.main,
+      borderLeft: verticalBorder,
+      borderRight: verticalBorder,
       borderBottom: isBelowSelected ? 'none' : (isLastRow ? '2px solid ' + theme.palette.primary.main : '2px solid ' + theme.palette.primary.main),
       borderTop:
         is30MinIncrement
@@ -117,12 +140,21 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
           : (isAboveSelected ? 'none' : '2px solid ' + theme.palette.primary.main),
     };
   } else {
-    // Add gray divider borders for non-selected cells or when not editing
     border = {
       borderLeft: '1px solid ' + theme.palette.divider,
       borderRight: '1px solid ' + theme.palette.divider,
       borderTop: rowIdx > 0 && rowIdx % 2 === 0 ? '1px solid ' + theme.palette.divider : 'none',
     };
+  }
+
+  // Add highlight for hovered user
+  let highlightStyle = {};
+  if (highlightUserName) {
+    if (!isHighlightedUserAvailable) {
+      highlightStyle = {
+        filter: 'grayscale(60%)',
+      };
+    }
   }
 
   return (
@@ -143,19 +175,16 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
         backgroundColor: bgColor,
         color: isSelected && !showOthersAvailability ? '#fff' : theme.palette.text.primary,
         cursor: isSelectable ? 'pointer' : 'default',
-        transition: 'background 0.2s',
+        transition: 'background 0.2s, box-shadow 0.2s, opacity 0.2s, filter 0.2s',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: 13,
         userSelect: 'none',
         '&:hover': {
-          backgroundColor: isSelected && !showOthersAvailability
-            ? theme.palette.primary.dark
-            : theme.palette.mode === 'light'
-              ? '#D1D5DB'
-              : '#4B5563'
+          backgroundColor: darken(bgColor, 0.1),
         },
+        ...highlightStyle,
       }}
     />
   );
@@ -174,6 +203,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   onRequireEdit,
   editingMyAvailability,
   uniqueUserCount,
+  highlightUserName,
 }) => {
   // Days (columns)
   let days = Object.keys(groupedByDate);
@@ -417,6 +447,9 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                 handleCellMouseEnter(rowIdx, colIdx, cell.slotId);
               };
 
+              // Highlight if highlightUserName is available in this slot
+              const isHighlightedUserAvailable = highlightUserName && cell.availableUsers.includes(highlightUserName);
+
               return (
                 <GridCell
                   key={cell.slotId}
@@ -440,6 +473,8 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   event={event}
                   editingMyAvailability={editingMyAvailability}
                   uniqueUserCount={uniqueUserCount}
+                  isHighlightedUserAvailable={!!isHighlightedUserAvailable}
+                  highlightUserName={highlightUserName}
                 />
               );
             })
