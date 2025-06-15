@@ -392,9 +392,9 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
       {/* Success Alert */}
       <Snackbar 
         open={submitSuccess} 
-        autoHideDuration={6000} 
+        autoHideDuration={5000} 
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert onClose={handleCloseAlert} severity="success" sx={{ width: '100%' }}>
           Event created successfully!
@@ -404,9 +404,9 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
       {/* Error Alert */}
       <Snackbar 
         open={!!submitError} 
-        autoHideDuration={6000} 
+        autoHideDuration={5000} 
         onClose={handleCloseAlert}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert onClose={handleCloseAlert} severity="error" sx={{ width: '100%' }}>
           {submitError}

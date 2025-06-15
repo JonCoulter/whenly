@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({
               fontWeight: 600,
             }}
           >
-            {title}
+            {title} 📅
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

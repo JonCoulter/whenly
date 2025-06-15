@@ -31,7 +31,7 @@ const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
         <Grid container spacing={2} justifyContent="space-between">
           <Grid size={{ xs:12, sm:6 }}>
             <Typography variant="body2" color="text.secondary">
-              {title} - Made with ❤️ by <Link href="https://joncoulter.github.io" target="_blank" rel="noopener" color="inherit" sx={{ textDecoration: 'none', color: 'text.secondary', '&:hover': { color: theme.palette.primary.main } }}>Jonathan Coulter</Link>
+              {title} - Made with ❤️ by <Link href="https://joncoulter.github.io" target="_blank" rel="noopener" color="inherit" sx={{ textDecoration: 'none', color: 'text.secondary', '&:hover': { color: theme.palette.primary.main } }}>@joncoulter</Link>
             </Typography>
           </Grid>
           <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>

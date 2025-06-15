@@ -905,8 +905,6 @@ const EventPage: React.FC = () => {
                           <ListItem
                             key={uniqueUser}
                             sx={{ py: 0.5 }}
-                            onMouseEnter={() => setHoveredUserName(uniqueUser)}
-                            onMouseLeave={() => setHoveredUserName(null)}
                           >
                             <ListItemIcon sx={{ minWidth: 36 }}>
                               <Avatar
@@ -929,6 +927,8 @@ const EventPage: React.FC = () => {
                             </ListItemIcon>
                             <ListItemText
                               primary={uniqueUser}
+                              onMouseEnter={() => setHoveredUserName(uniqueUser)}
+                              onMouseLeave={() => setHoveredUserName(null)}
                               primaryTypographyProps={{
                                 variant: "body2",
                                 sx: hoveredSlotInfo
@@ -1005,6 +1005,7 @@ const EventPage: React.FC = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
