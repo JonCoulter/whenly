@@ -18,6 +18,9 @@ const HomePage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  let darkIdxs = [3, 5, 8, 10, 12, 14, 15, 17, 19, 22];
+  let lightIdxs = [2, 7, 9, 11, 16, 23, 28];
+
   return (
     <>
       <Helmet>
@@ -56,7 +59,7 @@ const HomePage: React.FC = () => {
                 maxWidth: 530,
               }}
             >
-              Sync your Google Calendar and we will find a time that works for everyone.
+              Sync your Google Calendar and we can find a time that works for everyone.
             </Typography>
 
             {/* Sample Grid Preview */}
@@ -77,7 +80,7 @@ const HomePage: React.FC = () => {
                     key={idx}
                     sx={{
                       backgroundColor:
-                        idx % 7 === 0 ? "primary.main" : "#E5E7EB",
+                        darkIdxs.includes(idx) ? "primary.main" : lightIdxs.includes(idx) ? "primary.light" :"#E5E7EB",
                       borderRadius: 0.5,
                     }}
                   />

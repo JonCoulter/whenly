@@ -6,8 +6,7 @@ class StorageService {
 
   private constructor() {
     // Use localStorage in production, sessionStorage in development
-    // this.storage = config.environment === 'production' ? localStorage : sessionStorage;
-    this.storage = localStorage;
+    this.storage = config.environment === 'production' ? localStorage : sessionStorage;
   }
 
   public static getInstance(): StorageService {

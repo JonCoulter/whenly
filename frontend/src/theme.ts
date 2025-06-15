@@ -6,6 +6,7 @@ import type { ThemeOptions, PaletteMode } from '@mui/material/styles';
 const baseColors = {
   primary: {
     main: '#2083F2',
+    light: '#93C5FD',
   },
   secondary: {
     main: '#FF5623',

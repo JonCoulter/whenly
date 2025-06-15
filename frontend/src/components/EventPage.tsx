@@ -724,7 +724,6 @@ const EventPage: React.FC = () => {
                   sx={{
                     fontWeight: 400,
                     fontSize: "2.5rem",
-                    mb: 0.5,
                     textAlign: { xs: "left", md: "left" },
                     width: "100%",
                   }}
@@ -777,7 +776,7 @@ const EventPage: React.FC = () => {
               sx={{
                 width: { xs: "100%", md: "auto" },
                 minWidth: { md: 350 },
-                alignItems: { xs: "center", md: "flex-start" },
+                alignItems: "center",
                 justifyContent: { xs: "center", md: "flex-start" },
                 mt: { xs: 2, md: 0 }, // add margin top on mobile for spacing
                 mb: { xs: 2, md: 0 }, // optional: margin bottom on mobile for spacing
@@ -907,6 +906,7 @@ const EventPage: React.FC = () => {
                       : undefined,
                     opacity: flashEditButton ? 0.8 : 1,
                     width: { xs: "100%", md: "auto" },
+                    height: "41px"
                   }}
                 >
                   {mySubmittedSlots.length > 0
