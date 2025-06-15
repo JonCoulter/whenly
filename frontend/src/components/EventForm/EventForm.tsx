@@ -30,9 +30,11 @@ import { useNavigate } from 'react-router-dom';
 
 // Define time options for dropdowns
 const timeOptions = [
+  '12:00 AM',
+  '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM', '06:00 AM',
   '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
   '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', '06:00 PM',
-  '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM'
+  '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM', '11:00 PM', '12:00 AM'
 ];
 
 interface EventFormProps {
@@ -274,6 +276,17 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
                     value={startTime}
                     label="From"
                     onChange={(e) => setStartTime(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'divider',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                    }}
                   >
                     {timeOptions.map(time => (
                       <MenuItem key={`start-${time}`} value={time}>{time}</MenuItem>
@@ -288,6 +301,17 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
                     value={endTime}
                     label="To"
                     onChange={(e) => setEndTime(e.target.value)}
+                    sx={{
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'divider',
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'primary.main',
+                      },
+                    }}
                   >
                     {timeOptions.map(time => (
                       <MenuItem key={`end-${time}`} value={time}>{time}</MenuItem>
@@ -396,7 +420,7 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
                       sx={{
                         display: 'flex',
                         flexWrap: 'wrap',
-                        gap: 1,
+                        gap: 1.5,
                         justifyContent: 'center',
                         mb: 1,
                       }}

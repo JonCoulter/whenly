@@ -6,10 +6,9 @@ import EventForm from './EventForm';
 interface EventFormModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (data: any) => void;
 }
 
-const EventFormModal: React.FC<EventFormModalProps> = ({ open, onClose, onSubmit }) => {
+const EventFormModal: React.FC<EventFormModalProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -36,10 +35,6 @@ const EventFormModal: React.FC<EventFormModalProps> = ({ open, onClose, onSubmit
       </IconButton>
       <DialogContent sx={{ p: 2, pt: 4 }}>
         <EventForm 
-          onSubmit={(data) => {
-            onSubmit?.(data);
-            onClose();
-          }}
           paperProps={{ 
             elevation: 0,
             sx: { p: 0 }

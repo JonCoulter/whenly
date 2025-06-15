@@ -1,5 +1,5 @@
 .rdp-root {
-  --rdp-accent-color: #10A37F; /* Primary color from theme */
+  --rdp-accent-color: #2083F2; /* Primary color from theme */
   --rdp-background-color: rgba(16, 163, 127, 0.15); /* Lighter version of primary */
   margin: 0;
 }

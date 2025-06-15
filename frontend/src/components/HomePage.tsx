@@ -10,19 +10,13 @@ import {
   useTheme,
 } from "@mui/material";
 import { Helmet } from "react-helmet";
-import EventForm from "./EventForm";
+import EventForm from "./EventForm/EventForm";
 import EventFormModal from "./EventFormModal";
 
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleEventSubmit = (data: any) => {
-    // Handle event creation
-    console.log("Event data:", data);
-    // TODO: API call or state update
-  };
 
   return (
     <>
@@ -39,7 +33,7 @@ const HomePage: React.FC = () => {
         }}
       >
         {/* Split Hero Layout */}
-        <Grid container spacing={4} justifyContent="center">
+        <Grid container spacing={6} justifyContent="center">
           {/* Left: Hero & Preview */}
           <Grid size={{ xs: 12, md: 6 }} sx={{ paddingTop: "10vh" }}>
             <Typography
@@ -57,10 +51,12 @@ const HomePage: React.FC = () => {
               variant="body1"
               color="textSecondary"
               paragraph
-              sx={{ textAlign: { xs: "center", md: "left" } }}
+              sx={{ 
+                textAlign: { xs: "center", md: "left" },
+                maxWidth: 530,
+              }}
             >
-              Sync with Google Calendar to effortlessly find the perfect time
-              for everyone to meet.
+              Sync your Google Calendar and we will find a time that works for everyone.
             </Typography>
 
             {/* Sample Grid Preview */}
@@ -107,7 +103,6 @@ const HomePage: React.FC = () => {
           {!isMobile && (
             <Grid size={{ xs: 12, md: 6 }}>
               <EventForm
-                onSubmit={handleEventSubmit}
                 paperProps={{ sx: { p: 3, mx: { xs: "auto", md: 0 } } }}
               />
             </Grid>
@@ -118,7 +113,6 @@ const HomePage: React.FC = () => {
         <EventFormModal
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSubmit={handleEventSubmit}
         />
       </Container>
     </>

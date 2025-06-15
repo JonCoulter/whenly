@@ -1112,7 +1112,7 @@ const EventPage: React.FC = () => {
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
+                        sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" } }}
                       >
                         No one has responded to this event yet.
                       </Typography>
