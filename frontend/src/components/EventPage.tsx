@@ -6,6 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import {
   Container,
   Typography,
@@ -687,498 +688,508 @@ const EventPage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 1 }}>
-      <Paper elevation={2} sx={{ p: 3 }}>
-        {/* Title and Button Row (responsive) */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            alignItems: { xs: "flex-start", md: "flex-start" },
-            justifyContent: "space-between",
-            mb: 0,
-            gap: { xs: 0.5, md: 0 },
-            width: "100%",
-          }}
-        >
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
-                sx={{
-                  width: 6,
-                  height: 36,
-                  borderRadius: 2,
-                  background: (theme) => theme.palette.primary.main,
-                  mr: 0.5,
-                  boxShadow: 1,
-                }}
-              />
-              <Typography
-                variant="h4"
-                component="h1"
-                sx={{
-                  fontWeight: 400,
-                  fontSize: "2.5rem",
-                  mb: 0.5,
-                  textAlign: { xs: "left", md: "left" },
-                  width: "100%",
-                }}
-              >
-                {event?.name || "Event Details"}
-              </Typography>
-            </Box>
-            {event?.eventType === "specificDays" && (
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
-              >
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.5, mr: 1 }}
-                >
-                  {(() => {
-                    if (!event?.specificDays?.length) {
-                      return null;
-                    }
-
-                    let startDate = event.specificDays[0];
-                    let endDate =
-                      event.specificDays[event.specificDays.length - 1];
-
-                    if (event.specificDays.length > 1) {
-                      const sorted = [...event.specificDays].sort(
-                        (a, b) => new Date(a).getTime() - new Date(b).getTime()
-                      );
-                      startDate = sorted[0];
-                      endDate = sorted[sorted.length - 1];
-                    }
-
-                    return (
-                      <>
-                        {format(parseISO(startDate), "M/d")} -{" "}
-                        {format(parseISO(endDate), "M/d")}
-                      </>
-                    );
-                  })()}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          {/* Button Stack: centered vertically on mobile, top-aligned on desktop */}
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={1}
+    <>
+      <Helmet>
+        <title>{event?.name || "Event Details"} - Whenly</title>
+      </Helmet>
+      <Container maxWidth="lg" sx={{ py: 1 }}>
+        <Paper elevation={2} sx={{ p: 3 }}>
+          {/* Title and Button Row (responsive) */}
+          <Box
             sx={{
-              width: { xs: "100%", md: "auto" },
-              minWidth: { md: 350 },
-              alignItems: { xs: "center", md: "flex-start" },
-              justifyContent: { xs: "center", md: "flex-start" },
-              mt: { xs: 2, md: 0 }, // add margin top on mobile for spacing
-              mb: { xs: 2, md: 0 }, // optional: margin bottom on mobile for spacing
-              height: { xs: "100%", md: "auto" },
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: { xs: "flex-start", md: "flex-start" },
+              justifyContent: "space-between",
+              mb: 0,
+              gap: { xs: 0.5, md: 0 },
+              width: "100%",
             }}
           >
-            <Button
-              variant="outlined"
-              color="primary"
-              size="large"
-              startIcon={<LinkIcon />}
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setSnackbar({
-                  open: true,
-                  message: "Event link copied to clipboard!",
-                  severity: "success",
-                });
-              }}
-              sx={{
-                textTransform: "none",
-                borderColor: "divider",
-                color: "text.secondary",
-                width: { xs: "100%", md: "auto" },
-                "&:hover": {
-                  borderColor: "primary.main",
-                  backgroundColor: "transparent",
-                },
-              }}
-            >
-              Copy link
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="large"
-              startIcon={<CalendarMonthIcon />}
-              onClick={user ? fetchCalendarEvents : handleGoogleLogin}
-              disabled={isImporting}
-              sx={{
-                textTransform: "none",
-                borderColor: "divider",
-                color: "text.secondary",
-                width: { xs: "100%", md: "auto" },
-                "&:hover": {
-                  borderColor: "primary.main",
-                  backgroundColor: "transparent",
-                },
-              }}
-            >
-              {isImporting
-                ? "Importing..."
-                : user || editingMyAvailability
-                ? "Import Google Calendar"
-                : "Login with Google"}
-            </Button>
-            {editingMyAvailability ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1,
-                  width: { xs: "100%", md: "auto" },
-                }}
-              >
-                <IconButton
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    setEditingMyAvailability(false);
-                    setSelectedSlots([]);
-                    setShowOthersAvailability(true);
-                  }}
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
                   sx={{
-                    color: "text.secondary",
-                    "&:hover": {
-                      color: "secondary.main",
-                    },
-                    width: { xs: 40, md: 40 },
-                    height: { xs: 40, md: 40 },
+                    width: 6,
+                    height: 36,
+                    borderRadius: 2,
+                    background: (theme) => theme.palette.primary.main,
+                    mr: 0.5,
+                    boxShadow: 1,
+                  }}
+                />
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  sx={{
+                    fontWeight: 400,
+                    fontSize: "2.5rem",
+                    mb: 0.5,
+                    textAlign: { xs: "left", md: "left" },
+                    width: "100%",
                   }}
                 >
-                  <CloseIcon />
-                </IconButton>
+                  {event?.name || "Event Details"}
+                </Typography>
+              </Box>
+              {event?.eventType === "specificDays" && (
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+                >
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.5, mr: 1 }}
+                  >
+                    {(() => {
+                      if (!event?.specificDays?.length) {
+                        return null;
+                      }
+
+                      let startDate = event.specificDays[0];
+                      let endDate =
+                        event.specificDays[event.specificDays.length - 1];
+
+                      if (event.specificDays.length > 1) {
+                        const sorted = [...event.specificDays].sort(
+                          (a, b) =>
+                            new Date(a).getTime() - new Date(b).getTime()
+                        );
+                        startDate = sorted[0];
+                        endDate = sorted[sorted.length - 1];
+                      }
+
+                      return (
+                        <>
+                          {format(parseISO(startDate), "M/d")} -{" "}
+                          {format(parseISO(endDate), "M/d")}
+                        </>
+                      );
+                    })()}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            {/* Button Stack: centered vertically on mobile, top-aligned on desktop */}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1}
+              sx={{
+                width: { xs: "100%", md: "auto" },
+                minWidth: { md: 350 },
+                alignItems: { xs: "center", md: "flex-start" },
+                justifyContent: { xs: "center", md: "flex-start" },
+                mt: { xs: 2, md: 0 }, // add margin top on mobile for spacing
+                mb: { xs: 2, md: 0 }, // optional: margin bottom on mobile for spacing
+                height: { xs: "100%", md: "auto" },
+              }}
+            >
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
+                startIcon={<LinkIcon />}
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  setSnackbar({
+                    open: true,
+                    message: "Event link copied to clipboard!",
+                    severity: "success",
+                  });
+                }}
+                sx={{
+                  textTransform: "none",
+                  borderColor: "divider",
+                  color: "text.secondary",
+                  width: { xs: "100%", md: "auto" },
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    backgroundColor: "transparent",
+                  },
+                }}
+              >
+                Copy link
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="large"
+                startIcon={<CalendarMonthIcon />}
+                onClick={user ? fetchCalendarEvents : handleGoogleLogin}
+                disabled={isImporting}
+                sx={{
+                  textTransform: "none",
+                  borderColor: "divider",
+                  color: "text.secondary",
+                  width: { xs: "100%", md: "auto" },
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    backgroundColor: "transparent",
+                  },
+                }}
+              >
+                {isImporting
+                  ? "Importing..."
+                  : user || editingMyAvailability
+                  ? "Import Google Calendar"
+                  : "Login with Google"}
+              </Button>
+              {editingMyAvailability ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    width: { xs: "100%", md: "auto" },
+                  }}
+                >
+                  <IconButton
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      setEditingMyAvailability(false);
+                      setSelectedSlots([]);
+                      setShowOthersAvailability(true);
+                    }}
+                    sx={{
+                      color: "text.secondary",
+                      "&:hover": {
+                        color: "secondary.main",
+                      },
+                      width: { xs: 40, md: 40 },
+                      height: { xs: 40, md: 40 },
+                    }}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    disabled={
+                      isSubmitting ||
+                      (!user && !name) ||
+                      selectedSlots.length === 0
+                    }
+                    onClick={handleSubmit}
+                    sx={{
+                      minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
+                      textTransform: "none",
+                      width: { xs: "100%", md: "auto" },
+                    }}
+                  >
+                    {isSubmitting
+                      ? mySubmittedSlots.length > 0
+                        ? "Updating..."
+                        : "Submitting..."
+                      : mySubmittedSlots.length > 0
+                      ? "Update"
+                      : "Submit"}
+                  </Button>
+                </Box>
+              ) : (
                 <Button
                   variant="contained"
                   color="primary"
                   size="large"
-                  disabled={
-                    isSubmitting ||
-                    (!user && !name) ||
-                    selectedSlots.length === 0
-                  }
-                  onClick={handleSubmit}
+                  onClick={() => {
+                    setEditingMyAvailability(true);
+                    setSelectedSlots(mySubmittedSlots);
+                    setShowOthersAvailability(false);
+                  }}
                   sx={{
-                    minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
+                    minWidth: "160px",
                     textTransform: "none",
+                    transition: "box-shadow 0.2s, background 0.2s",
+                    boxShadow: flashEditButton
+                      ? "0 0 0 4px #1976d2aa"
+                      : undefined,
+                    backgroundColor: flashEditButton
+                      ? "primary.light"
+                      : undefined,
+                    opacity: flashEditButton ? 0.8 : 1,
                     width: { xs: "100%", md: "auto" },
                   }}
                 >
-                  {isSubmitting
-                    ? mySubmittedSlots.length > 0
-                      ? "Updating..."
-                      : "Submitting..."
-                    : mySubmittedSlots.length > 0
-                    ? "Update"
-                    : "Submit"}
+                  {mySubmittedSlots.length > 0
+                    ? "Edit availability"
+                    : "Enter availability"}
                 </Button>
-              </Box>
-            ) : (
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                onClick={() => {
-                  setEditingMyAvailability(true);
-                  setSelectedSlots(mySubmittedSlots);
-                  setShowOthersAvailability(false);
-                }}
-                sx={{
-                  minWidth: "160px",
-                  textTransform: "none",
-                  transition: "box-shadow 0.2s, background 0.2s",
-                  boxShadow: flashEditButton
-                    ? "0 0 0 4px #1976d2aa"
-                    : undefined,
-                  backgroundColor: flashEditButton
-                    ? "primary.light"
-                    : undefined,
-                  opacity: flashEditButton ? 0.8 : 1,
-                  width: { xs: "100%", md: "auto" },
-                }}
-              >
-                {mySubmittedSlots.length > 0
-                  ? "Edit availability"
-                  : "Enter availability"}
-              </Button>
-            )}
-          </Stack>
-        </Box>
+              )}
+            </Stack>
+          </Box>
 
-        {/* Main Content Grid */}
-        <Grid container spacing={3} >
-          <Grid size={{ xs: 12, md: 3 }}>
-            {/* Responses Panel */}
-            {(showOthersAvailability || responses) && (
-              <Box
-                sx={{
-                  mb: { xs: 1, md: 0 },
-                  mt: { xs: 0, md: 5.8},
-                  width: { xs: "100%", md: "auto" },
-                  pr: { xs: 0, md: 2 },
-                  borderRadius: 3,
-                  boxShadow: { xs: 1, md: 2 },
-                  p: { xs: 2, md: 3 },
-                  minHeight: 320,
-                }}
-              >
+          {/* Main Content Grid */}
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              {/* Responses Panel */}
+              {(showOthersAvailability || responses) && (
                 <Box
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                    mb: 1.5,
+                    mb: { xs: 1, md: 0 },
+                    mt: { xs: 0, md: 5.8 },
+                    width: { xs: "100%", md: "auto" },
+                    pr: { xs: 0, md: 2 },
+                    borderRadius: 3,
+                    boxShadow: { xs: 1, md: 2 },
+                    p: { xs: 2, md: 3 },
+                    minHeight: 320,
                   }}
                 >
                   <Box
                     sx={{
-                      width: 6,
-                      height: 28,
-                      borderRadius: 2,
-                      background: (theme) => theme.palette.primary.main,
-                      boxShadow: 1,
-                    }}
-                  />
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontSize: { xs: "1.1rem", md: "1.3rem" },
-                      letterSpacing: 0.5,
-                      color: "text.primary",
-                      textShadow: "0 1px 2px rgba(25, 118, 210, 0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      mb: 1.5,
                     }}
                   >
-                    Responses
-                  </Typography>
-                </Box>
-                {/* Show others' availability toggle moved here */}
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={showOthersAvailability}
-                      onChange={(e) =>
-                        setShowOthersAvailability(e.target.checked)
-                      }
-                      color="primary"
-                      size="small"
+                    <Box
+                      sx={{
+                        width: 6,
+                        height: 28,
+                        borderRadius: 2,
+                        background: (theme) => theme.palette.primary.main,
+                        boxShadow: 1,
+                      }}
                     />
-                  }
-                  label={
-                    <Typography variant="body2" color="text.secondary">
-                      Show others' availability
-                    </Typography>
-                  }
-                  sx={{
-                    m: 0,
-                    mb: 1,
-                    "& .MuiFormControlLabel-label": {
-                      fontSize: "0.875rem",
-                    },
-                  }}
-                />
-                <Divider sx={{ my: 1.5 }} />
-                <Box>
-                  {/* Top label */}
-                  {hoveredSlotInfo ? (
                     <Typography
-                      variant="subtitle2"
+                      variant="h6"
                       sx={{
-                        mb: 1,
-                        color: "text.secondary",
-                        fontSize: { xs: "0.9rem", md: "1rem" },
+                        fontSize: { xs: "1.1rem", md: "1.3rem" },
+                        letterSpacing: 0.5,
+                        color: "text.primary",
+                        textShadow: "0 1px 2px rgba(25, 118, 210, 0.08)",
                       }}
                     >
-                      {hoveredSlotInfo.dayLabel} on{" "}
-                      {format(
-                        parse(hoveredSlotInfo.time, "HH:mm", new Date()),
-                        "h:mm a"
-                      )}
+                      Responses
                     </Typography>
-                  ) : (
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        mb: 1,
-                        color: "text.secondary",
-                        fontSize: { xs: "0.9rem", md: "1rem" },
-                      }}
-                    >
-                      Hover to view availability
-                    </Typography>
-                  )}
-                  {/* Single list of all responders, with hover styling */}
-                  {allUniqueUsers.size > 0 ? (
-                    <List dense disablePadding>
-                      {Array.from(allUniqueUsers).map((uniqueUser) => {
-                        let isAvailable = false;
-                        if (hoveredSlotInfo) {
-                          isAvailable =
-                            hoveredSlotInfo.availableUsers.includes(uniqueUser);
+                  </Box>
+                  {/* Show others' availability toggle moved here */}
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={showOthersAvailability}
+                        onChange={(e) =>
+                          setShowOthersAvailability(e.target.checked)
                         }
-                        return (
-                          <ListItem
-                            key={uniqueUser}
-                            sx={{
-                              py: 0.5,
-                              borderRadius: 2,
-                              transition: "background 0.2s, box-shadow 0.2s",
-                              "&:hover": {
-                                background: (theme) =>
-                                  theme.palette.action.hover,
-                                boxShadow: 2,
-                              },
-                              mb: 0.5,
-                            }}
-                          >
-                            <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 } }}>
-                              <Avatar
-                                sx={{
-                                  width: { xs: 22, md: 28 },
-                                  height: { xs: 22, md: 28 },
-                                  bgcolor: hoveredSlotInfo
-                                    ? isAvailable
-                                      ? "primary.main"
-                                      : "secondary.main"
-                                    : "grey.400",
-                                  opacity:
-                                    hoveredSlotInfo && !isAvailable ? 0.7 : 1,
-                                  color: "#fff",
-                                  fontWeight: 700,
-                                  fontSize: { xs: "0.9rem", md: "1.1rem" },
-                                  border: (theme) =>
-                                    `2px solid ${theme.palette.background.paper}`,
-                                  boxShadow: 1,
-                                  transition: "box-shadow 0.2s, border 0.2s",
-                                }}
+                        color="primary"
+                        size="small"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" color="text.secondary">
+                        Show others' availability
+                      </Typography>
+                    }
+                    sx={{
+                      m: 0,
+                      mb: 1,
+                      "& .MuiFormControlLabel-label": {
+                        fontSize: "0.875rem",
+                      },
+                    }}
+                  />
+                  <Divider sx={{ my: 1.5 }} />
+                  <Box>
+                    {/* Top label */}
+                    {hoveredSlotInfo ? (
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1,
+                          color: "text.secondary",
+                          fontSize: { xs: "0.9rem", md: "1rem" },
+                        }}
+                      >
+                        {hoveredSlotInfo.dayLabel} on{" "}
+                        {format(
+                          parse(hoveredSlotInfo.time, "HH:mm", new Date()),
+                          "h:mm a"
+                        )}
+                      </Typography>
+                    ) : (
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          mb: 1,
+                          color: "text.secondary",
+                          fontSize: { xs: "0.9rem", md: "1rem" },
+                        }}
+                      >
+                        Hover to view availability
+                      </Typography>
+                    )}
+                    {/* Single list of all responders, with hover styling */}
+                    {allUniqueUsers.size > 0 ? (
+                      <List dense disablePadding>
+                        {Array.from(allUniqueUsers).map((uniqueUser) => {
+                          let isAvailable = false;
+                          if (hoveredSlotInfo) {
+                            isAvailable =
+                              hoveredSlotInfo.availableUsers.includes(
+                                uniqueUser
+                              );
+                          }
+                          return (
+                            <ListItem
+                              key={uniqueUser}
+                              sx={{
+                                py: 0.5,
+                                borderRadius: 2,
+                                transition: "background 0.2s, box-shadow 0.2s",
+                                "&:hover": {
+                                  background: (theme) =>
+                                    theme.palette.action.hover,
+                                  boxShadow: 2,
+                                },
+                                mb: 0.5,
+                              }}
+                            >
+                              <ListItemIcon
+                                sx={{ minWidth: { xs: 28, md: 36 } }}
                               >
-                                {uniqueUser.charAt(0)}
-                              </Avatar>
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={uniqueUser}
-                              onMouseEnter={() =>
-                                setHoveredUserName(uniqueUser)
-                              }
-                              onMouseLeave={() => setHoveredUserName(null)}
-                              primaryTypographyProps={{
-                                variant: "body2",
-                                sx: hoveredSlotInfo
-                                  ? isAvailable
-                                    ? {
+                                <Avatar
+                                  sx={{
+                                    width: { xs: 22, md: 28 },
+                                    height: { xs: 22, md: 28 },
+                                    bgcolor: hoveredSlotInfo
+                                      ? isAvailable
+                                        ? "primary.main"
+                                        : "secondary.main"
+                                      : "grey.400",
+                                    opacity:
+                                      hoveredSlotInfo && !isAvailable ? 0.7 : 1,
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    fontSize: { xs: "0.9rem", md: "1.1rem" },
+                                    border: (theme) =>
+                                      `2px solid ${theme.palette.background.paper}`,
+                                    boxShadow: 1,
+                                    transition: "box-shadow 0.2s, border 0.2s",
+                                  }}
+                                >
+                                  {uniqueUser.charAt(0)}
+                                </Avatar>
+                              </ListItemIcon>
+                              <ListItemText
+                                primary={uniqueUser}
+                                onMouseEnter={() =>
+                                  setHoveredUserName(uniqueUser)
+                                }
+                                onMouseLeave={() => setHoveredUserName(null)}
+                                primaryTypographyProps={{
+                                  variant: "body2",
+                                  sx: hoveredSlotInfo
+                                    ? isAvailable
+                                      ? {
+                                          fontSize: {
+                                            xs: "0.98rem",
+                                            md: "1.08rem",
+                                          },
+                                          fontWeight: 500,
+                                        }
+                                      : {
+                                          color: "text.disabled",
+                                          textDecoration: "line-through",
+                                          fontSize: {
+                                            xs: "0.98rem",
+                                            md: "1.08rem",
+                                          },
+                                        }
+                                    : {
                                         fontSize: {
                                           xs: "0.98rem",
                                           md: "1.08rem",
                                         },
                                         fontWeight: 500,
-                                      }
-                                    : {
-                                        color: "text.disabled",
-                                        textDecoration: "line-through",
-                                        fontSize: {
-                                          xs: "0.98rem",
-                                          md: "1.08rem",
-                                        },
-                                      }
-                                  : {
-                                      fontSize: {
-                                        xs: "0.98rem",
-                                        md: "1.08rem",
                                       },
-                                      fontWeight: 500,
-                                    },
-                              }}
-                            />
-                          </ListItem>
-                        );
-                      })}
-                    </List>
-                  ) : (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
-                    >
-                      No one has responded to this event yet.
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-            )}
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 9 }}>
-            {/* Calendar View */}
-            <Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              ></Box>
-
-              {editingMyAvailability && !user && (
-                <Box sx={{ mb: 2 }}>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    style={{
-                      padding: "12px",
-                      fontSize: "16px",
-                      color: theme.palette.text.primary,
-                      borderRadius: "8px",
-                      backgroundColor: theme.palette.background.paper,
-                      border: `1px solid ${theme.palette.divider}`,
-                      width: "100%",
-                      maxWidth: "300px",
-                    }}
-                  />
+                                }}
+                              />
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: "0.95rem", md: "1rem" } }}
+                      >
+                        No one has responded to this event yet.
+                      </Typography>
+                    )}
+                  </Box>
                 </Box>
               )}
+            </Grid>
 
-              {/* Availability Grid */}
-              <AvailabilityGrid
-                {...availabilityGridProps}
-                editingMyAvailability={editingMyAvailability}
-                onSlotHover={handleSlotHover}
-                onSlotLeave={handleSlotLeave}
-                onRequireEdit={handleRequireEdit}
-                highlightUserName={hoveredUserName}
-              />
-            </Box>
+            <Grid size={{ xs: 12, md: 9 }}>
+              {/* Calendar View */}
+              <Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                ></Box>
+
+                {editingMyAvailability && !user && (
+                  <Box sx={{ mb: 2 }}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      style={{
+                        padding: "12px",
+                        fontSize: "16px",
+                        color: theme.palette.text.primary,
+                        borderRadius: "8px",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        width: "100%",
+                        maxWidth: "300px",
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {/* Availability Grid */}
+                <AvailabilityGrid
+                  {...availabilityGridProps}
+                  editingMyAvailability={editingMyAvailability}
+                  onSlotHover={handleSlotHover}
+                  onSlotLeave={handleSlotLeave}
+                  onRequireEdit={handleRequireEdit}
+                  highlightUserName={hoveredUserName}
+                />
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
           onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+          <Alert
+            onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
 
-      <SignInModal
-        open={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
-        title={"Whenly"}
-      />
-    </Container>
+        <SignInModal
+          open={isSignInModalOpen}
+          onClose={() => setIsSignInModalOpen(false)}
+          title={"Whenly"}
+        />
+      </Container>
+    </>
   );
 };
 
