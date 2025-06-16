@@ -707,13 +707,14 @@ const EventPage: React.FC = () => {
             }}
           >
             <Box sx={{ flex: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
                 <Box
                   sx={{
                     width: 6,
                     height: 36,
                     borderRadius: 2,
                     background: (theme) => theme.palette.primary.main,
+                    mt: "6.5px",
                     mr: 0.5,
                     boxShadow: 1,
                   }}
@@ -726,48 +727,51 @@ const EventPage: React.FC = () => {
                     fontSize: "2.5rem",
                     textAlign: { xs: "left", md: "left" },
                     width: "100%",
+                    pr: 1.5,
                   }}
                 >
                   {event?.name || "Event Details"}
                 </Typography>
               </Box>
-              {event?.eventType === "specificDays" && (
-                <Box
-                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
+              >
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    lineHeight: 1.5,
+                    mr: 1,
+                    minHeight: { xs: 0, md: 20 },
+                    mt: 0.5,
+                  }}
                 >
-                  <Typography
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{ lineHeight: 1.5, mr: 1 }}
-                  >
-                    {(() => {
-                      if (!event?.specificDays?.length) {
-                        return null;
-                      }
+                  {(() => {
+                    if (!event?.specificDays?.length) {
+                      return null;
+                    }
 
-                      let startDate = event.specificDays[0];
-                      let endDate =
-                        event.specificDays[event.specificDays.length - 1];
+                    let startDate = event.specificDays[0];
+                    let endDate =
+                      event.specificDays[event.specificDays.length - 1];
 
-                      if (event.specificDays.length > 1) {
-                        const sorted = [...event.specificDays].sort(
-                          (a, b) =>
-                            new Date(a).getTime() - new Date(b).getTime()
-                        );
-                        startDate = sorted[0];
-                        endDate = sorted[sorted.length - 1];
-                      }
-
-                      return (
-                        <>
-                          {format(parseISO(startDate), "M/d")} -{" "}
-                          {format(parseISO(endDate), "M/d")}
-                        </>
+                    if (event.specificDays.length > 1) {
+                      const sorted = [...event.specificDays].sort(
+                        (a, b) => new Date(a).getTime() - new Date(b).getTime()
                       );
-                    })()}
-                  </Typography>
-                </Box>
-              )}
+                      startDate = sorted[0];
+                      endDate = sorted[sorted.length - 1];
+                    }
+
+                    return (
+                      <>
+                        {format(parseISO(startDate), "M/d")} -{" "}
+                        {format(parseISO(endDate), "M/d")}
+                      </>
+                    );
+                  })()}
+                </Typography>
+              </Box>
             </Box>
             {/* Button Stack: centered vertically on mobile, top-aligned on desktop */}
             <Stack
@@ -906,7 +910,7 @@ const EventPage: React.FC = () => {
                       : undefined,
                     opacity: flashEditButton ? 0.8 : 1,
                     width: { xs: "100%", md: "auto" },
-                    height: "41px"
+                    height: "41px",
                   }}
                 >
                   {mySubmittedSlots.length > 0
@@ -1034,6 +1038,8 @@ const EventPage: React.FC = () => {
                               key={uniqueUser}
                               sx={{
                                 py: 0.5,
+                                pl: 0.2,
+                                pr: 0,
                                 borderRadius: 2,
                                 transition: "background 0.2s, box-shadow 0.2s",
                                 "&:hover": {
@@ -1045,7 +1051,7 @@ const EventPage: React.FC = () => {
                               }}
                             >
                               <ListItemIcon
-                                sx={{ minWidth: { xs: 28, md: 36 } }}
+                                sx={{ minWidth: { xs: 28, md: 36 }, pl: 0.2 }}
                               >
                                 <Avatar
                                   sx={{

@@ -210,8 +210,28 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   if (event?.eventType === 'specificDays') {
     days = days.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   } else if (event?.eventType === 'daysOfWeek') {
-    const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    days = days.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+    const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    // Map days to their indices in the week
+    const indices = days.map(day => dayOrder.indexOf(day)).sort((a, b) => a - b);
+    // Find the largest gap between consecutive indices (including wrap-around)
+    let maxGap = -1;
+    let startIdx = 0;
+    for (let i = 0; i < indices.length; i++) {
+      const curr = indices[i];
+      const next = indices[(i + 1) % indices.length];
+      // Calculate gap, wrapping around
+      const gap = ((next - curr + 7) % 7) - 1;
+      if (gap > maxGap) {
+        maxGap = gap;
+        startIdx = (i + 1) % indices.length;
+      }
+    }
+    // Rotate the days array to start at the best streak
+    const orderedIndices = [];
+    for (let i = 0; i < indices.length; i++) {
+      orderedIndices.push(indices[(startIdx + i) % indices.length]);
+    }
+    days = orderedIndices.map(idx => dayOrder[idx]);
   }
 
   // Build time labels (rows) from processedTimeSlots

@@ -19,7 +19,7 @@ const HomePage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   let darkIdxs = [3, 5, 8, 10, 12, 14, 15, 17, 19, 22];
-  let lightIdxs = [2, 7, 9, 11, 16, 23, 28];
+  let lightIdxs = [2, 7, 9, 11, 16, 20, 23, 25, 28];
 
   return (
     <>
@@ -38,7 +38,7 @@ const HomePage: React.FC = () => {
         {/* Split Hero Layout */}
         <Grid container spacing={6} justifyContent="center">
           {/* Left: Hero & Preview */}
-          <Grid size={{ xs: 12, md: 6 }} sx={{ paddingTop: "10vh" }}>
+          <Grid size={{ xs: 11, md: 6 }} sx={{ paddingTop: "10vh" }}>
             <Typography
               variant="h4"
               component="h1"
