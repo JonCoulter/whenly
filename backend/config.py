@@ -15,7 +15,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     
     # CORS configuration
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost").split(",")
+    CORS_ORIGINS = os.getenv("CORS_ORIGINS").split(",")
     CORS_SUPPORTS_CREDENTIALS = True
 
 class DevelopmentConfig(Config):

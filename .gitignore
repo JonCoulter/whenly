@@ -11,3 +11,4 @@
 # Env & OS
 *.env
 .DS_Store
+secrets/

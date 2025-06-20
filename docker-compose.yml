@@ -15,13 +15,14 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/.env
+      - ./secrets/.env
     depends_on:
       - db
     networks:
       - app-net
     volumes:
-        - ./backend/client_secret.json:/app/client_secret.json:ro
+      - ./secrets:/secrets:ro
+      - ./secrets/client_secret.json:/app/client_secret.json:ro
 
   db:
     image: postgres:15-alpine

@@ -2,6 +2,8 @@
  * Service for handling event-related API calls
  */
 
+import config from '../config';
+
 // Types
 export interface EventFormData {
   eventName: string;
@@ -27,7 +29,7 @@ export interface ApiResponse<T> {
  */
 export async function createEvent(eventData: EventFormData): Promise<ApiResponse<any>> {
   try {
-    const response = await fetch('http://localhost:5000/api/events/create', {
+    const response = await fetch(`${config.apiUrl}/api/events/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,7 +64,7 @@ export async function createEvent(eventData: EventFormData): Promise<ApiResponse
  */
 export async function getEventById(eventId: string): Promise<ApiResponse<any>> {
   try {
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}`, {
+    const response = await fetch(`${config.apiUrl}/api/events/${eventId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -100,7 +102,7 @@ export const submitAvailability = async (eventId: string, data: {
 
     console.log(data);
     
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}/availability`, {
+    const response = await fetch(`${config.apiUrl}/api/events/${eventId}/availability`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -126,7 +128,7 @@ export const updateAvailability = async (eventId: string, data: {
   selectedSlots: string[];
 }): Promise<ApiResponse<void>> => {
   try {
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}/availability`, {
+    const response = await fetch(`${config.apiUrl}/api/events/${eventId}/availability`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -152,7 +154,7 @@ export const getEventResponses = async (eventId: string): Promise<{
   responses: any[];
 }> => {
   try {
-    const response = await fetch(`http://localhost:5000/api/events/${eventId}/responses`);
+    const response = await fetch(`${config.apiUrl}/api/events/${eventId}/responses`);
     const result = await response.json();
     
     if (!response.ok) {
