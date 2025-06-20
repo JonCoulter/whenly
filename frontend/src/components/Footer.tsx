@@ -44,7 +44,7 @@ const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
               }}
             >
               <Stack direction="row" spacing={2} sx={{ fontSize: '0.8rem' }}>
-                <Link href="#" sx={linkStyle} target="_blank" rel="noopener">
+                <Link href="/privacy-policy" sx={linkStyle} target="_blank" rel="noopener">
                   Privacy Policy
                 </Link>
                 <Link href="https://forms.gle/NSxnXYc2Ge69WpJ5A" sx={linkStyle} target="_blank" rel="noopener">

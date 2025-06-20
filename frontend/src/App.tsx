@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
 import EventPage from './components/EventPage';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -33,6 +34,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/e/:eventId" element={<EventPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               </Routes>
             </Box>
             <Footer />
