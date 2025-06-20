@@ -2,13 +2,13 @@ import React from 'react';
 import { Container, Typography, Box, List, ListItem } from '@mui/material';
 
 const PrivacyPolicy: React.FC = () => (
-  <Container maxWidth="md" sx={{ py: 6 }}>
+  <Container maxWidth="md" sx={{ py: 4 }}>
     <Box>
       <Typography variant="h4" gutterBottom>
-        Privacy Policy
+        Whenly Privacy Policy
       </Typography>
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        Last updated: June 20, 2025
+        Effective Date: June 20, 2025
       </Typography>
 
       <Typography variant="body1" paragraph>
@@ -88,7 +88,7 @@ const PrivacyPolicy: React.FC = () => (
         <ListItem>Opt out of certain data collection (by not using Google login or by deleting your account/event responses)</ListItem>
       </List>
       <Typography variant="body1" paragraph>
-        To exercise these rights, please contact us at <a href="mailto:jonacoulter@gmail.com">jonacoulter@gmail.com</a>.
+        To exercise these rights, please contact us at jonacoulter@gmail.com.
       </Typography>
 
       <Typography variant="h5" gutterBottom>8. International Data Transfers</Typography>
@@ -108,7 +108,7 @@ const PrivacyPolicy: React.FC = () => (
 
       <Typography variant="h5" gutterBottom>11. Contact Us</Typography>
       <Typography variant="body1" paragraph>
-        If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at <a href="mailto:jonacoulter@gmail.com">jonacoulter@gmail.com</a>.
+        If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at jonacoulter@gmail.com.
       </Typography>
     </Box>
   </Container>

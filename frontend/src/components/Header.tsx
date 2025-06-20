@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Box, 
-  Container, 
-  IconButton, 
-  useTheme as useMuiTheme, 
+import React, { useState } from "react";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Container,
+  IconButton,
+  useTheme as useMuiTheme,
   Button,
   Avatar,
   Menu,
@@ -16,34 +16,32 @@ import {
   Snackbar,
   Alert,
   Switch,
-  FormControlLabel
-} from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
-import Brightness3Icon from '@mui/icons-material/Brightness3';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import LogoutIcon from '@mui/icons-material/Logout';
-import SignInModal from './SignInModal';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+  FormControlLabel,
+} from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
+import Brightness3Icon from "@mui/icons-material/Brightness3";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SignInModal from "./SignInModal";
+import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface HeaderProps {
   title?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  title = 'Whenly'
-}) => {
+const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
   const muiTheme = useMuiTheme();
   const { isDarkMode, toggleTheme } = useTheme();
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error'
+    message: "",
+    severity: "success" as "success" | "error",
   });
   const { user, logout } = useAuth();
-  
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -57,51 +55,57 @@ const Header: React.FC<HeaderProps> = ({
     handleMenuClose();
     setSnackbar({
       open: true,
-      message: 'Successfully logged out!',
-      severity: 'success'
+      message: "Successfully logged out!",
+      severity: "success",
     });
   };
 
   const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
-  
+
   return (
-    <AppBar position="static" sx={{ width: '100%' }}>
+    <AppBar position="static" sx={{ width: "100%" }}>
       <Container maxWidth="lg">
-        <Toolbar sx={{ flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          <Typography 
-            variant="h5"
-            component={RouterLink}
-            to="/"
-            sx={{ 
-              textDecoration: 'none', 
-              color: 'text.primary',
-              fontWeight: 600,
-            }}
-          >
-            {title} 📅
-          </Typography>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Toolbar sx={{ flexWrap: "wrap", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+            <Typography
+              variant="h5"
+              component={RouterLink}
+              to="/"
+              sx={{
+                textDecoration: "none",
+                color: "text.primary",
+                fontWeight: 600,
+              }}
+            >
+              {title}
+            </Typography>
+            <img
+              src="/calendar.png"
+              alt="Calendar"
+              style={{ width: "24px", height: "24px" }}
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {user ? (
               <>
                 <IconButton
                   onClick={handleMenuOpen}
-                  sx={{ 
+                  sx={{
                     p: 0,
-                    '&:hover': {
-                      opacity: 0.8
-                    }
+                    "&:hover": {
+                      opacity: 0.8,
+                    },
                   }}
                 >
                   <Avatar
                     alt={user.name}
                     src={user.picture}
-                    sx={{ 
-                      width: 42, 
+                    sx={{
+                      width: 42,
                       height: 42,
-                      border: `2px solid ${muiTheme.palette.primary.main}`
+                      border: `2px solid ${muiTheme.palette.primary.main}`,
                     }}
                   />
                 </IconButton>
@@ -109,20 +113,43 @@ const Header: React.FC<HeaderProps> = ({
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleMenuClose}
-                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                  sx = {{ mt: 1 }}
+                  transformOrigin={{ horizontal: "right", vertical: "top" }}
+                  anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                  sx={{ mt: 1 }}
                 >
-                  <Typography sx={{ p: 1, mb: 1, textAlign: 'center', justifyContent: 'center', fontWeight: 600 }}>
+                  <Typography
+                    sx={{
+                      p: 1,
+                      mb: 1,
+                      textAlign: "center",
+                      justifyContent: "center",
+                      fontWeight: 600,
+                    }}
+                  >
                     {user.name}
                   </Typography>
-                  <MenuItem onClick={handleLogout} sx={{ p: 2, pl: 1.5, textAlign: 'center', justifyContent: 'center' }}>
+                  <MenuItem
+                    onClick={handleLogout}
+                    sx={{
+                      p: 2,
+                      pl: 1.5,
+                      textAlign: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <ListItemIcon sx={{ pl: 1, mr: 1 }}>
                       <LogoutIcon fontSize="small" />
                     </ListItemIcon>
                     <ListItemText>Sign out</ListItemText>
                   </MenuItem>
-                  <MenuItem sx={{ p: 1, pl: 2, textAlign: 'center', justifyContent: 'center' }}>
+                  <MenuItem
+                    sx={{
+                      p: 1,
+                      pl: 2,
+                      textAlign: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <FormControlLabel
                       control={
                         <Switch
@@ -139,15 +166,16 @@ const Header: React.FC<HeaderProps> = ({
                 </Menu>
               </>
             ) : (
-              <Button 
-                variant="text" 
+              <Button
+                variant="text"
                 onClick={() => setIsSignInModalOpen(true)}
                 sx={{
                   color: "text.primary",
-                  '&:hover': {
+                  "&:hover": {
                     color: muiTheme.palette.primary.main,
-                  }
-                }}>
+                  },
+                }}
+              >
                 Sign In
               </Button>
             )}
@@ -155,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({
         </Toolbar>
       </Container>
 
-      <SignInModal 
+      <SignInModal
         open={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
         title={title}
@@ -165,12 +193,12 @@ const Header: React.FC<HeaderProps> = ({
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert 
-          onClose={handleSnackbarClose} 
+        <Alert
+          onClose={handleSnackbarClose}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           {snackbar.message}
         </Alert>
@@ -179,4 +207,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header; 
+export default Header;
