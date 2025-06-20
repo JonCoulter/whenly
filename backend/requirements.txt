@@ -7,6 +7,7 @@ Flask-Migrate==4.1.0
 Flask-SQLAlchemy==3.1.1
 google_auth_oauthlib==1.2.1
 google-api-python-client
+gunicorn
 greenlet==3.2.2
 itsdangerous==2.2.0
 Jinja2==3.1.6
