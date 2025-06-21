@@ -68,13 +68,14 @@ restore-clean:
 			exit 1; \
 		fi; \
 		echo "🗑 Dropping and recreating database $(POSTGRES_DB)..."; \
-		$(DC) exec -T db psql -U postgres -c "DROP DATABASE IF EXISTS $(POSTGRES_DB);"; \
-		$(DC) exec -T db psql -U postgres -c "CREATE DATABASE $(POSTGRES_DB);"; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "DROP DATABASE IF EXISTS $(POSTGRES_DB);"; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"; \
 		echo "📥 Restoring from: $$PREVIOUS_BACKUP"; \
 		cat $$PREVIOUS_BACKUP | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
 		echo "✅ Restore complete."; \
 	else \
 		echo "❌ Restore canceled."; \
 	fi
+
 
 .PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean
