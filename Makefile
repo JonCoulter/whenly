@@ -58,7 +58,7 @@ backup:
 	@echo "✅ Database backed up to $(BACKUP_FILE)"
 
 # Completely resets the database and restores the latest backup
-restore-clean:
+restore-latest:
 	@echo "⚠️  WARNING: This will DELETE all current data in $(POSTGRES_DB) and restore from backup"
 	@read -p "Type 'yes' to proceed: " confirm; \
 	if [ "$$confirm" = "yes" ]; then \
@@ -69,6 +69,8 @@ restore-clean:
 			echo "❌ No previous backup file found. Aborting restore."; \
 			exit 1; \
 		fi; \
+		echo "🔒 Terminating active connections to database $(POSTGRES_DB)..."; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$(POSTGRES_DB)';"; \
 		echo "🗑 Dropping and recreating database $(POSTGRES_DB)..."; \
 		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "DROP DATABASE IF EXISTS $(POSTGRES_DB);"; \
 		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"; \
@@ -109,4 +111,4 @@ restore-from:
 		echo "❌ Restore canceled."; \
 	fi
 
-.PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean restore-from
+.PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-latest restore-from
