@@ -103,5 +103,54 @@ END \
 		echo "❌ Restore canceled."; \
 	fi
 
+# Completely resets the database and restores from a specific backup file
+restore-from:
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ FILE argument required. Usage: make restore-from FILE=backups/your_backup.sql"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$(FILE)" ]; then \
+		echo "❌ Backup file '$(FILE)' not found."; \
+		exit 1; \
+	fi; \
+	echo "⚠️  WARNING: This will DELETE all current data in $(POSTGRES_DB) and restore from $(FILE)"; \
+	read -p "Type 'yes' to proceed: " confirm; \
+	if [ "$$confirm" = "yes" ]; then \
+		echo "🗑 Dropping and recreating database $(POSTGRES_DB)..."; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "DROP DATABASE IF EXISTS $(POSTGRES_DB);"; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"; \
+		echo "📥 Restoring from: $(FILE)"; \
+		cat $(FILE) | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
+		echo "🔄 Resetting sequences..."; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "\
+DO \$\$ \
+DECLARE \
+    seq RECORD; \
+BEGIN \
+    FOR seq IN \
+        SELECT pg_class.relname AS sequence_name, \
+               pg_namespace.nspname AS schema_name, \
+               t.relname AS table_name, \
+               a.attname AS column_name \
+        FROM pg_class \
+        JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace \
+        JOIN pg_depend ON pg_depend.objid = pg_class.oid \
+        JOIN pg_class t ON pg_depend.refobjid = t.oid \
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = pg_depend.refobjsubid \
+        WHERE pg_class.relkind = 'S' \
+          AND pg_namespace.nspname = 'public' \
+    LOOP \
+        EXECUTE format( \
+            'SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', \
+            seq.sequence_name, seq.column_name, seq.table_name \
+        ); \
+    END LOOP; \
+END \
+\$\$;"; \
+		echo "✅ Restore complete."; \
+	else \
+		echo "❌ Restore canceled."; \
+	fi
 
-.PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean
+
+.PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean restore-from
