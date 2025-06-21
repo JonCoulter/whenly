@@ -1,6 +1,8 @@
 include secrets/.env
 export
 
+SHELL := /bin/bash
+
 DC=docker compose
 BACKUP_DIR=backups
 BACKUP_FILE=$(BACKUP_DIR)/$(POSTGRES_DB)_backup_$(shell date +%Y%m%d_%H%M%S).sql
