@@ -75,37 +75,12 @@ restore-clean:
 		echo "📥 Restoring from: $$PREVIOUS_BACKUP"; \
 		cat $$PREVIOUS_BACKUP | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
 		echo "🔄 Resetting sequences..."; \
-		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "$$(cat <<'EOF' \
-DO $$ \
-DECLARE \
-    seq RECORD; \
-BEGIN \
-    FOR seq IN \
-        SELECT pg_class.relname AS sequence_name, \
-               pg_namespace.nspname AS schema_name, \
-               t.relname AS table_name, \
-               a.attname AS column_name \
-        FROM pg_class \
-        JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace \
-        JOIN pg_depend ON pg_depend.objid = pg_class.oid \
-        JOIN pg_class t ON pg_depend.refobjid = t.oid \
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = pg_depend.refobjsubid \
-        WHERE pg_class.relkind = 'S' \
-          AND pg_namespace.nspname = 'public' \
-    LOOP \
-        EXECUTE format( \
-            'SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', \
-            seq.sequence_name, seq.column_name, seq.table_name \
-        ); \
-    END LOOP; \
-END \
-$$; \
-EOF \
-)"; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "DO \$\$ DECLARE seq RECORD; BEGIN FOR seq IN SELECT pg_class.relname AS sequence_name, pg_namespace.nspname AS schema_name, t.relname AS table_name, a.attname AS column_name FROM pg_class JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace JOIN pg_depend ON pg_depend.objid = pg_class.oid JOIN pg_class t ON pg_depend.refobjid = t.oid JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = pg_depend.refobjsubid WHERE pg_class.relkind = 'S' AND pg_namespace.nspname = 'public' LOOP EXECUTE format('SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', seq.sequence_name, seq.column_name, seq.table_name); END LOOP; END \$\$;"; \
 		echo "✅ Restore complete."; \
 	else \
 		echo "❌ Restore canceled."; \
 	fi
+
 
 # Completely resets the database and restores from a specific backup file
 restore-from:
@@ -120,31 +95,18 @@ restore-from:
 	echo "⚠️  WARNING: This will DELETE all current data in $(POSTGRES_DB) and restore from $(FILE)"; \
 	read -p "Type 'yes' to proceed: " confirm; \
 	if [ "$$confirm" = "yes" ]; then \
+		echo "🔒 Terminating active connections to database $(POSTGRES_DB)..."; \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$(POSTGRES_DB)';"; \
 		echo "🗑 Dropping and recreating database $(POSTGRES_DB)..."; \
 		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "DROP DATABASE IF EXISTS $(POSTGRES_DB);"; \
 		$(DC) exec -T db psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"; \
 		echo "📥 Restoring from: $(FILE)"; \
 		cat $(FILE) | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
 		echo "🔄 Resetting sequences..."; \
-		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "$$(cat <<'EOF' \
-DO $$ \
-DECLARE \
-    seq RECORD; \
-BEGIN \
-    FOR seq IN \
-        SELECT pg_class.relname AS sequence_name, \
-               pg_namespace.nspname AS schema_name, \
-               t.relname AS table_name, \
-               a.attname AS column_name \
-        FROM pg_class \
-        JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace \
-        JOIN pg_depend ON pg_depend.objid = pg_class.oid \
-        JOIN pg_class t ON pg_depend.refobjid = t.oid \
-        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = pg_depend.refobjsubid \
-        WHERE pg_class.relkind = 'S' \
-          AND pg_namespace.nspname = 'public' \
-    LOOP \
-        EXECUTE format( \
-            'SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "DO \$\$ DECLARE seq RECORD; BEGIN FOR seq IN SELECT pg_class.relname AS sequence_name, pg_namespace.nspname AS schema_name, t.relname AS table_name, a.attname AS column_name FROM pg_class JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace JOIN pg_depend ON pg_depend.objid = pg_class.oid JOIN pg_class t ON pg_depend.refobjid = t.oid JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = pg_depend.refobjsubid WHERE pg_class.relkind = 'S' AND pg_namespace.nspname = 'public' LOOP EXECUTE format('SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', seq.sequence_name, seq.column_name, seq.table_name); END LOOP; END \$\$;"; \
+		echo "✅ Restore complete."; \
+	else \
+		echo "❌ Restore canceled."; \
+	fi
 
 .PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean restore-from
