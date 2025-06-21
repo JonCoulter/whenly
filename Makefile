@@ -73,8 +73,8 @@ restore-clean:
 		echo "📥 Restoring from: $$PREVIOUS_BACKUP"; \
 		cat $$PREVIOUS_BACKUP | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
 		echo "🔄 Resetting sequences..."; \
-		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "\
-DO \$\$ \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "$$(cat <<'EOF' \
+DO $$ \
 DECLARE \
     seq RECORD; \
 BEGIN \
@@ -97,8 +97,10 @@ BEGIN \
         ); \
     END LOOP; \
 END \
-\$\$;"; \
-		echo "✅ Restore complete."
+$$; \
+EOF \
+)"; \
+		echo "✅ Restore complete."; \
 	else \
 		echo "❌ Restore canceled."; \
 	fi
@@ -122,8 +124,8 @@ restore-from:
 		echo "📥 Restoring from: $(FILE)"; \
 		cat $(FILE) | $(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB); \
 		echo "🔄 Resetting sequences..."; \
-		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "\
-DO \$\$ \
+		$(DC) exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -c "$$(cat <<'EOF' \
+DO $$ \
 DECLARE \
     seq RECORD; \
 BEGIN \
@@ -142,15 +144,5 @@ BEGIN \
     LOOP \
         EXECUTE format( \
             'SELECT setval(%I, COALESCE((SELECT MAX(%I) FROM %I), 1))', \
-            seq.sequence_name, seq.column_name, seq.table_name \
-        ); \
-    END LOOP; \
-END \
-\$\$;"; \
-		echo "✅ Restore complete."; \
-	else \
-		echo "❌ Restore canceled."; \
-	fi
-
 
 .PHONY: prod dev down stop ps logs rebuild frontend-dev backend-dev db-dev backup restore-clean restore-from
