@@ -935,7 +935,7 @@ const EventPage: React.FC = () => {
                     borderRadius: 3,
                     boxShadow: { xs: 1, md: 2 },
                     p: { xs: 2, md: 3 },
-                    minHeight: 320,
+                    minHeight: { xs: 0, md: 320 },
                   }}
                 >
                   <Box
