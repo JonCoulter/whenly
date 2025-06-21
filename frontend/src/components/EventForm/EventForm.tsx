@@ -81,11 +81,6 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!user) {
-      setSubmitError("Please sign in to create an event");
-      return;
-    }
-
     if (eventName.trim() === "") {
       setSubmitError("Please enter an event name");
       return;
@@ -111,8 +106,8 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
     const formData: EventFormData = {
       eventName,
       eventType,
-      createdBy: user.email,
-      creatorName: user.name,
+      createdBy: user?.email || "",
+      creatorName: user?.name || "",
       timeRange: {
         start: startTime,
         end: endTime,
