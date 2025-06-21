@@ -50,6 +50,8 @@ interface GridCellProps {
   theme: any;
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseEnter: () => void;
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchMove: (e: React.TouchEvent) => void;
   colIdx: number;
   rowIdx: number;
   daysLength: number;
@@ -75,6 +77,8 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
   theme,
   onMouseDown,
   onMouseEnter,
+  onTouchStart,
+  onTouchMove,
   colIdx,
   rowIdx,
   daysLength,
@@ -168,6 +172,8 @@ const GridCell: React.FC<GridCellProps> = React.memo(({
       onMouseLeave={() => {
         onSlotLeave();
       }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       sx={{
         ...border,
         height: cellHeight + 'px',
@@ -304,6 +310,9 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   const [draggedSlots, setDraggedSlots] = useState<Set<string>>(new Set());
   const [lastDragCell, setLastDragCell] = useState<{ row: number; col: number } | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  // Touch drag state
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [lastTouchCell, setLastTouchCell] = useState<{ row: number; col: number } | null>(null);
 
   // Helper: get all cells between two points (inclusive, straight line)
   const getCellsBetween = useCallback(
@@ -350,6 +359,34 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [isDragging, dragMode, draggedSlots, setSelectedSlots]);
 
+  // Touch end handler (global)
+  useEffect(() => {
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (isTouchDragging && dragMode) {
+        if (setSelectedSlots) {
+          setSelectedSlots(prev => {
+            const newSet = new Set(prev);
+            draggedSlots.forEach(slotId => {
+              if (dragMode === 'select') newSet.add(slotId);
+              else newSet.delete(slotId);
+            });
+            return Array.from(newSet);
+          });
+        }
+        setIsTouchDragging(false);
+        setDragMode(null);
+        setDraggedSlots(new Set());
+        setLastTouchCell(null);
+      }
+    };
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [isTouchDragging, dragMode, draggedSlots, setSelectedSlots]);
+
   // Memoized Set for efficient selectedSlots lookup
   const selectedSlotsSet = useMemo(() => new Set(selectedSlots), [selectedSlots]);
 
@@ -379,6 +416,51 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
       setLastDragCell({ row, col });
     }
   }, [setSelectedSlots, isDragging, lastDragCell, getCellsBetween, grid]);
+
+  // --- Touch handlers ---
+  const handleCellTouchStart = useCallback((row: number, col: number, slotId: string, isSelected: boolean, e: React.TouchEvent) => {
+    if (!setSelectedSlots) {
+      if (typeof onRequireEdit === 'function') onRequireEdit();
+      return;
+    }
+    setIsTouchDragging(true);
+    setDragMode(isSelected ? 'deselect' : 'select');
+    setDraggedSlots(new Set([slotId]));
+    setLastTouchCell({ row, col });
+  }, [setSelectedSlots, onRequireEdit]);
+
+  const handleCellTouchMove = useCallback((row: number, col: number, slotId: string, e: React.TouchEvent) => {
+    if (!setSelectedSlots) return;
+    if (isTouchDragging && lastTouchCell) {
+      const path = getCellsBetween(lastTouchCell, { row, col });
+      setDraggedSlots(prev => {
+        const next = new Set(prev);
+        path.forEach(({ row, col }) => {
+          if (grid[row] && grid[row][col]) next.add(grid[row][col].slotId);
+        });
+        return next;
+      });
+      setLastTouchCell({ row, col });
+    }
+  }, [setSelectedSlots, isTouchDragging, lastTouchCell, getCellsBetween, grid]);
+
+  // Prevent scroll on touch drag by adding non-passive listeners
+  useEffect(() => {
+    const gridEl = gridRef.current;
+    if (!gridEl) return;
+    // Handler to prevent scroll if dragging
+    const preventScrollIfDragging = (e: TouchEvent) => {
+      if (isTouchDragging) {
+        e.preventDefault();
+      }
+    };
+    gridEl.addEventListener('touchmove', preventScrollIfDragging, { passive: false });
+    gridEl.addEventListener('touchstart', preventScrollIfDragging, { passive: false });
+    return () => {
+      gridEl.removeEventListener('touchmove', preventScrollIfDragging);
+      gridEl.removeEventListener('touchstart', preventScrollIfDragging);
+    };
+  }, [isTouchDragging]);
 
   return (
     <Box sx={{ width: '100%', overflowX: 'auto', pb: 2 }}>
@@ -467,6 +549,14 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                 handleCellMouseEnter(rowIdx, colIdx, cell.slotId);
               };
 
+              // --- Touch handlers for this cell ---
+              const onCellTouchStart = (e: React.TouchEvent) => {
+                handleCellTouchStart(rowIdx, colIdx, cell.slotId, isSelected, e);
+              };
+              const onCellTouchMove = (e: React.TouchEvent) => {
+                handleCellTouchMove(rowIdx, colIdx, cell.slotId, e);
+              };
+
               // Highlight if highlightUserName is available in this slot
               const isHighlightedUserAvailable = highlightUserName && cell.availableUsers.includes(highlightUserName);
 
@@ -481,6 +571,9 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   theme={theme}
                   onMouseDown={onCellMouseDown}
                   onMouseEnter={onCellMouseEnter}
+                  // --- Add touch handlers ---
+                  onTouchStart={onCellTouchStart}
+                  onTouchMove={onCellTouchMove}
                   colIdx={colIdx}
                   rowIdx={rowIdx}
                   daysLength={days.length}
