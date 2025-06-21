@@ -68,13 +68,14 @@ const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
     <AppBar position="static" sx={{ width: "100%" }}>
       <Container maxWidth="lg">
         <Toolbar sx={{ flexWrap: "wrap", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            component={RouterLink}
+            to="/"
+            sx={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 1 }}
+          >
             <Typography
               variant="h5"
-              component={RouterLink}
-              to="/"
               sx={{
-                textDecoration: "none",
                 color: "text.primary",
                 fontWeight: 600,
               }}
