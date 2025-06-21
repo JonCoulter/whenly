@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
     <AppBar position="static" sx={{ width: "100%" }}>
       <Container maxWidth="lg">
         <Toolbar sx={{ flexWrap: "wrap", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.9 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography
               variant="h5"
               component={RouterLink}
@@ -84,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
             <img
               src="/calendar.png"
               alt="Calendar"
-              style={{ width: "24px", height: "24px" }}
+              style={{ width: "28px", height: "28px" }}
             />
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
