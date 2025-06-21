@@ -25,6 +25,7 @@ const PrivacyPolicy: React.FC = () => (
         <ListItem>Event participation data (your name and, if logged in, your email) when you create or respond to events</ListItem>
         <ListItem>Session data (essential cookies for authentication)</ListItem>
         <ListItem>Guest participation data (name and availability) stored only in your browser's local/session storage</ListItem>
+        <ListItem>Analytics data collected by Google Analytics, including your IP address, browser and device information, pages visited, and usage patterns</ListItem>
       </List>
 
       <Typography variant="h5" gutterBottom>2. How We Collect Information</Typography>
@@ -35,6 +36,7 @@ const PrivacyPolicy: React.FC = () => (
         <ListItem>Google OAuth authentication and Google Calendar API integration (with your consent)</ListItem>
         <ListItem>User interactions with our service (creating or responding to events)</ListItem>
         <ListItem>Essential cookies for session management</ListItem>
+        <ListItem>Google Analytics tracking scripts embedded on our website</ListItem>
       </List>
 
       <Typography variant="h5" gutterBottom>3. How We Use Your Information</Typography>
@@ -46,6 +48,7 @@ const PrivacyPolicy: React.FC = () => (
         <ListItem>Process and display your calendar data</ListItem>
         <ListItem>Share your availability with others (only when you choose to do so)</ListItem>
         <ListItem>Improve our service and communicate important updates</ListItem>
+        <ListItem>Analyze usage and trends through Google Analytics to enhance user experience and monitor website performance</ListItem>
       </List>
 
       <Typography variant="h5" gutterBottom>4. Data Storage and Security</Typography>
@@ -64,9 +67,9 @@ const PrivacyPolicy: React.FC = () => (
         We do not sell your personal information. We may share your information with:
       </Typography>
       <List>
-        <ListItem>Google (as required for service functionality)</ListItem>
+        <ListItem>Google (as required for service functionality and for Google Analytics data processing)</ListItem>
         <ListItem>Other users (only when you explicitly share your availability)</ListItem>
-        <ListItem>Service providers who assist in operating our service (never for marketing or analytics)</ListItem>
+        <ListItem>Service providers who assist in operating our service (never for marketing or analytics beyond Google Analytics)</ListItem>
       </List>
       <Typography variant="body1" paragraph>
         We may also disclose your information if required by law or to protect our rights.
@@ -74,7 +77,13 @@ const PrivacyPolicy: React.FC = () => (
 
       <Typography variant="h5" gutterBottom>6. Cookies and Tracking</Typography>
       <Typography variant="body1" paragraph>
-        We use only essential cookies for authentication and session management. We do not use tracking or analytics cookies. You can control cookies through your browser settings, but disabling them may affect your ability to use the service.
+        We use essential cookies for authentication and session management. Additionally, we use Google Analytics cookies and scripts to collect anonymous usage information to understand how users interact with our website. Google Analytics collects data such as your IP address, browser type, and pages visited. This helps us improve our service and user experience.
+      </Typography>
+      <Typography variant="body1" paragraph>
+        You can opt out of Google Analytics tracking by installing the Google Analytics Opt-out Browser Add-on available at <a href="https://tools.google.com/dlpage/gaoptout/" target="_blank" rel="noopener noreferrer">https://tools.google.com/dlpage/gaoptout/</a>.
+      </Typography>
+      <Typography variant="body1" paragraph>
+        You can also control cookies through your browser settings; however, disabling cookies may impact your ability to use certain features of our service.
       </Typography>
 
       <Typography variant="h5" gutterBottom>7. Your Rights and Choices</Typography>
@@ -85,7 +94,7 @@ const PrivacyPolicy: React.FC = () => (
         <ListItem>Access the personal information we hold about you</ListItem>
         <ListItem>Request correction or deletion of your data</ListItem>
         <ListItem>Export your data</ListItem>
-        <ListItem>Opt out of certain data collection (by not using Google login or by deleting your account/event responses)</ListItem>
+        <ListItem>Opt out of certain data collection (by not using Google login, deleting your account/event responses, or opting out of Google Analytics as described above)</ListItem>
       </List>
       <Typography variant="body1" paragraph>
         To exercise these rights, please contact us at jonacoulter@gmail.com.
@@ -103,7 +112,7 @@ const PrivacyPolicy: React.FC = () => (
 
       <Typography variant="h5" gutterBottom>10. Changes to This Policy</Typography>
       <Typography variant="body1" paragraph>
-        We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. Your continued use of Whenly after changes are posted constitutes your acceptance of those changes.
+        We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Effective Date". Your continued use of Whenly after changes are posted constitutes your acceptance of those changes.
       </Typography>
 
       <Typography variant="h5" gutterBottom>11. Contact Us</Typography>
@@ -114,4 +123,4 @@ const PrivacyPolicy: React.FC = () => (
   </Container>
 );
 
-export default PrivacyPolicy; 
+export default PrivacyPolicy;
