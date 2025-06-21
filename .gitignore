@@ -12,3 +12,7 @@
 *.env
 .DS_Store
 secrets/
+
+# Backups
+backups/
+backup_log.txt
