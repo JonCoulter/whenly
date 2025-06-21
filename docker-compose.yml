@@ -29,6 +29,7 @@ services:
       - ./secrets/.env
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./scripts:/scripts
     networks:
       - app-net
 
