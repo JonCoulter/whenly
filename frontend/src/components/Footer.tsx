@@ -21,24 +21,24 @@ const Footer: React.FC<FooterProps> = ({ title = 'Whenly' }) => {
     <Box 
       component="footer" 
       sx={{ 
-        py: 3,
+        py: { xs: 2, sm: 3 },
         borderTop: '1px solid',
         borderColor: 'divider',
         width: '100%',
       }}
     >
       <Container maxWidth="lg">
-        <Grid container spacing={2} justifyContent="space-between">
-          <Grid size={{ xs:12, sm:6 }}>
+        <Grid container spacing={1.5} justifyContent="space-between">
+          <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
             <Typography variant="body2" color="text.secondary">
               {title} - Made with ❤️ by <Link href="https://joncoulter.github.io" target="_blank" rel="noopener" color="inherit" sx={{ textDecoration: 'none', color: 'text.secondary', '&:hover': { color: theme.palette.primary.main } }}>@joncoulter</Link>
             </Typography>
           </Grid>
-          <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
+          <Grid size={{ xs:12, sm:6 }} sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                justifyContent: { xs: 'center', sm: 'flex-end' },
                 alignItems: 'center',
                 width: '100%',
               }}
