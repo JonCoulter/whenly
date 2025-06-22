@@ -21,6 +21,7 @@ const EventResponsesPanel: React.FC<any> = (props) => {
     allUniqueUsers,
     hoveredUserName,
     setHoveredUserName,
+    isMobile,
   } = props;
   return (
     <Box
@@ -57,45 +58,74 @@ const EventResponsesPanel: React.FC<any> = (props) => {
           Responses
         </Typography>
       </Box>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={showOthersAvailability}
-            onChange={(e) => setShowOthersAvailability(e.target.checked)}
-            color="primary"
-            size="small"
-          />
-        }
-        label={
-          <Typography variant="body2" color="text.secondary">
-            Show others' availability
-          </Typography>
-        }
-        sx={{ m: 0, mb: 1, "& .MuiFormControlLabel-label": { fontSize: "0.875rem" } }}
-      />
+      {!isMobile && (
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showOthersAvailability}
+              onChange={(e) => setShowOthersAvailability(e.target.checked)}
+              color="primary"
+              size="small"
+            />
+          }
+          label={
+            <Typography variant="body2" color="text.secondary">
+              Show others' availability
+            </Typography>
+          }
+          sx={{
+            m: 0,
+            mb: 1,
+            "& .MuiFormControlLabel-label": { fontSize: "0.875rem" },
+          }}
+        />
+      )}
       <Divider sx={{ my: 1.5 }} />
       <Box>
         {hoveredSlotInfo ? (
           <Typography
             variant="subtitle2"
-            sx={{ mb: 1, color: "text.secondary", fontSize: { xs: "0.9rem", md: "1rem" } }}
+            sx={{
+              mb: 1,
+              color: "text.secondary",
+              fontSize: { xs: "0.9rem", md: "1rem" },
+            }}
           >
-            {hoveredSlotInfo.dayLabel} on {format(parse(hoveredSlotInfo.time, "HH:mm", new Date()), "h:mm a")}
+            {hoveredSlotInfo.dayLabel} at{" "}
+            {format(parse(hoveredSlotInfo.time, "HH:mm", new Date()), "h:mm a")}
           </Typography>
         ) : (
           <Typography
             variant="subtitle2"
-            sx={{ mb: 1, color: "text.secondary", fontSize: { xs: "0.9rem", md: "1rem" } }}
+            sx={{
+              mb: 1,
+              color: "text.secondary",
+              fontSize: { xs: "0.9rem", md: "1rem" },
+            }}
           >
-            Hover to view availability
+            {isMobile ? "Tap to view availability" : "Hover to view availability"}
           </Typography>
         )}
         {allUniqueUsers.size > 0 ? (
-          <List dense disablePadding>
+          <List
+            dense
+            disablePadding
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr 1fr",
+                md: "1fr",
+              },
+              gap: 0,
+              width: "100%",
+              overflowX: "hidden",
+            }}
+          >
             {Array.from(allUniqueUsers).map((uniqueUser) => {
               let isAvailable = false;
               if (hoveredSlotInfo) {
-                isAvailable = hoveredSlotInfo.availableUsers.includes(uniqueUser);
+                isAvailable =
+                  hoveredSlotInfo.availableUsers.includes(uniqueUser);
               }
               return (
                 <ListItem
@@ -111,6 +141,8 @@ const EventResponsesPanel: React.FC<any> = (props) => {
                       boxShadow: 2,
                     },
                     mb: 0.5,
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 }, pl: 0.2 }}>
@@ -127,7 +159,8 @@ const EventResponsesPanel: React.FC<any> = (props) => {
                         color: "#fff",
                         fontWeight: 700,
                         fontSize: { xs: "0.9rem", md: "1.1rem" },
-                        border: (theme) => `2px solid ${theme.palette.background.paper}`,
+                        border: (theme) =>
+                          `2px solid ${theme.palette.background.paper}`,
                         boxShadow: 1,
                         transition: "box-shadow 0.2s, border 0.2s",
                       }}
@@ -137,15 +170,25 @@ const EventResponsesPanel: React.FC<any> = (props) => {
                   </ListItemIcon>
                   <ListItemText
                     primary={uniqueUser as string}
-                    onMouseEnter={() => setHoveredUserName(uniqueUser as string)}
+                    onMouseEnter={() =>
+                      setHoveredUserName(uniqueUser as string)
+                    }
                     onMouseLeave={() => setHoveredUserName(null)}
                     primaryTypographyProps={{
                       variant: "body2",
+                      fontSize: { xs: "0.7rem", md: "1rem" },
                       sx: hoveredSlotInfo
                         ? isAvailable
-                          ? { fontSize: { xs: "0.98rem", md: "1.08rem" }, fontWeight: 500 }
-                          : { color: "text.disabled", textDecoration: "line-through", fontSize: { xs: "0.98rem", md: "1.08rem" } }
-                        : { fontSize: { xs: "0.98rem", md: "1.08rem" }, fontWeight: 500 },
+                          ? {
+                              fontWeight: 500,
+                            }
+                          : {
+                              color: "text.disabled",
+                              textDecoration: "line-through",
+                            }
+                        : {
+                            fontWeight: 500,
+                          },
                     }}
                   />
                 </ListItem>
@@ -153,7 +196,11 @@ const EventResponsesPanel: React.FC<any> = (props) => {
             })}
           </List>
         ) : (
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" } }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontSize: { xs: "0.75rem", md: "0.8rem" } }}
+          >
             No one has responded to this event yet.
           </Typography>
         )}

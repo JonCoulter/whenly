@@ -10,15 +10,15 @@ const EventAvailabilitySection: React.FC<any> = (props) => {
     setName,
     theme,
     availabilityGridProps,
-    handleSlotHover,
-    handleSlotLeave,
-    handleRequireEdit,
+    onGridSlotHover,
+    onGridSlotHoverLeave,
+    onRequireEdit,
     hoveredUserName,
   } = props;
   return (
     <Box>
       {editingMyAvailability && !user && (
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ mb: 2, display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}>
           <input
             type="text"
             value={name}
@@ -40,9 +40,9 @@ const EventAvailabilitySection: React.FC<any> = (props) => {
       <AvailabilityGrid
         {...availabilityGridProps}
         editingMyAvailability={editingMyAvailability}
-        onSlotHover={handleSlotHover}
-        onSlotLeave={handleSlotLeave}
-        onRequireEdit={handleRequireEdit}
+        onSlotHoverChange={onGridSlotHover}
+        onSlotLeave={onGridSlotHoverLeave}
+        onRequireEdit={onRequireEdit}
         highlightUserName={hoveredUserName}
       />
     </Box>

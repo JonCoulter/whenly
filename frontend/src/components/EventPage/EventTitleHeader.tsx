@@ -11,8 +11,8 @@ const EventTitleHeader: React.FC<{ event: any }> = ({ event }) => {
             width: 6,
             borderRadius: 2,
             background: (theme) => theme.palette.primary.main,
-            mt: "6.5px",
-            mb: "6.5px",
+            mt: "2px",
+            mb: "2px",
             mr: 0.5,
             boxShadow: 1,
           }}
@@ -22,7 +22,7 @@ const EventTitleHeader: React.FC<{ event: any }> = ({ event }) => {
           component="h1"
           sx={{
             fontWeight: 400,
-            fontSize: "2.5rem",
+            fontSize: { xs: "1.5rem", md: "2.5rem" },
             textAlign: { xs: "left", md: "left" },
             width: "100%",
             pr: 1.5,

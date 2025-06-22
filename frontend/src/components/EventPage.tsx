@@ -274,11 +274,11 @@ const EventPage: React.FC = () => {
     [event?.eventType]
   );
 
-  // Memoize the hover handlers to avoid unnecessary re-renders
-  const handleSlotHover = useCallback((info: any) => {
+  // Rename hover handlers for clarity
+  const onGridSlotHover = useCallback((info: any) => {
     setHoveredSlotInfo(info);
   }, []);
-  const handleSlotLeave = useCallback(() => {
+  const onGridSlotHoverLeave = useCallback(() => {
     setHoveredSlotInfo(null);
   }, []);
 
@@ -648,7 +648,8 @@ const EventPage: React.FC = () => {
     }
   };
 
-  const handleRequireEdit = useCallback(() => {
+  // Rename for clarity
+  const onRequireEdit = useCallback(() => {
     setFlashEditButton(true);
     setTimeout(() => setFlashEditButton(false), 400);
   }, []);
@@ -702,9 +703,9 @@ const EventPage: React.FC = () => {
     setHoveredUserName,
     theme,
     availabilityGridProps,
-    handleSlotHover,
-    handleSlotLeave,
-    handleRequireEdit,
+    onGridSlotHover,
+    onGridSlotHoverLeave,
+    onRequireEdit,
     snackbar,
     isSignInModalOpen,
     setName,

@@ -21,10 +21,11 @@ const EventActionButtons: React.FC<any> = (props) => {
     selectedSlots,
     handleSubmit,
     flashEditButton,
+    isMobile,
   } = props;
   return (
     <Stack
-      direction={{ xs: "column", md: "row" }}
+      direction="row"
       spacing={1}
       sx={{
         width: { xs: "100%", md: "auto" },
@@ -39,8 +40,7 @@ const EventActionButtons: React.FC<any> = (props) => {
       <Button
         variant="outlined"
         color="primary"
-        size="large"
-        startIcon={<LinkIcon />}
+        size= { isMobile ? "medium" : "large" }
         onClick={() => {
           navigator.clipboard.writeText(window.location.href);
           if (props.setSnackbar) {
@@ -55,38 +55,37 @@ const EventActionButtons: React.FC<any> = (props) => {
           textTransform: "none",
           borderColor: "divider",
           color: "text.secondary",
-          width: { xs: "100%", md: "auto" },
+          width: "auto",
+          height: isMobile ? "36px" : "41px",
           "&:hover": {
             borderColor: "primary.main",
             backgroundColor: "transparent",
           },
         }}
       >
-        Copy link
+        <LinkIcon />
+        {isMobile ? "" : "Copy link"}
       </Button>
       <Button
         variant="outlined"
         color="primary"
-        size="large"
-        startIcon={<CalendarMonthIcon />}
+        size= { isMobile ? "medium" : "large" }
         onClick={user ? fetchCalendarEvents : handleGoogleLogin}
         disabled={isImporting}
         sx={{
           textTransform: "none",
           borderColor: "divider",
           color: "text.secondary",
-          width: { xs: "100%", md: "auto" },
+          width: "auto",
+          height: isMobile ? "36px" : "41px",
           "&:hover": {
             borderColor: "primary.main",
             backgroundColor: "transparent",
           },
         }}
       >
-        {isImporting
-          ? "Importing..."
-          : user || editingMyAvailability
-          ? "Import Google Calendar"
-          : "Login with Google"}
+        <CalendarMonthIcon />
+        {isMobile ? "" : isImporting ? "Importing..." : "Import Google Calendar"}
       </Button>
       {editingMyAvailability ? (
         <Box sx={{ display: "flex", gap: 1, width: { xs: "100%", md: "auto" } }}>
@@ -115,9 +114,10 @@ const EventActionButtons: React.FC<any> = (props) => {
             }
             onClick={handleSubmit}
             sx={{
-              minWidth: mySubmittedSlots.length > 0 ? "112px" : "160px",
+              minWidth: isMobile ? "60px" :mySubmittedSlots.length > 0 ? "112px" : "160px",
               textTransform: "none",
               width: { xs: "100%", md: "auto" },
+              height: isMobile ? "36px" : "41px",
             }}
           >
             {isSubmitting
@@ -140,14 +140,14 @@ const EventActionButtons: React.FC<any> = (props) => {
             setShowOthersAvailability(false);
           }}
           sx={{
-            minWidth: "160px",
+            minWidth: isMobile ? "90px" : "160px",
             textTransform: "none",
             transition: "box-shadow 0.2s, background 0.2s",
             boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
             backgroundColor: flashEditButton ? "primary.light" : undefined,
             opacity: flashEditButton ? 0.8 : 1,
             width: { xs: "100%", md: "auto" },
-            height: "41px",
+            height: isMobile ? "36px" : "41px",
           }}
         >
           {mySubmittedSlots.length > 0

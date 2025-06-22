@@ -1,5 +1,12 @@
-import React from "react";
-import { Box, Container, Paper, SpeedDial, SpeedDialAction, SpeedDialIcon } from "@mui/material";
+import React, { useState, useRef } from "react";
+import {
+  Box,
+  Container,
+  Paper,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+} from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LinkIcon from "@mui/icons-material/Link";
@@ -27,7 +34,6 @@ const EventPageMobile: React.FC<any> = (props) => {
     name,
     selectedSlots,
     handleSubmit,
-    flashEditButton,
     setSnackbar,
     showOthersAvailability,
     responses,
@@ -37,50 +43,78 @@ const EventPageMobile: React.FC<any> = (props) => {
     setHoveredUserName,
     theme,
     availabilityGridProps,
-    handleSlotHover,
-    handleSlotLeave,
-    handleRequireEdit,
+    onGridSlotHover,
+    onGridSlotHoverLeave,
+    onRequireEdit,
     snackbar,
     isSignInModalOpen,
     setName,
     ...rest
   } = props;
 
+  // State to control SpeedDial open and flash effect
+  // const [speedDialOpen, setSpeedDialOpen] = useState(false);
+  const [flashEditButton, setFlashEditButton] = useState(false);
+  const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to open SpeedDial and flash the edit button
+  const openSpeedDialAndFlashEdit = () => {
+    // setSpeedDialOpen(true);
+    setFlashEditButton(true);
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    flashTimeoutRef.current = setTimeout(() => setFlashEditButton(false), 600);
+  };
+
   // FAB actions
-  const actions = [
-    {
-      icon: editingMyAvailability ? <VisibilityIcon /> : <EditIcon />,
-      name: editingMyAvailability ? "View Responses" : "Edit Availability",
-      onClick: () => {
-        if (editingMyAvailability) {
-          setEditingMyAvailability(false);
-          setSelectedSlots([]);
-          setShowOthersAvailability(true);
-        } else {
-          setEditingMyAvailability(true);
-          setSelectedSlots(mySubmittedSlots);
-          setShowOthersAvailability(false);
-        }
-      },
-    },
-    {
-      icon: <LinkIcon />, name: "Copy Link", onClick: () => {
-        navigator.clipboard.writeText(window.location.href);
-        setSnackbar({
-          open: true,
-          message: "Event link copied to clipboard!",
-          severity: "success",
-        });
-      }
-    },
-    {
-      icon: <CalendarMonthIcon />, name: "Import Google Calendar", onClick: user ? fetchCalendarEvents : handleGoogleLogin
-    },
-  ];
+  // const actions = [
+  //   {
+  //     icon: (
+  //       editingMyAvailability ? <VisibilityIcon /> : <EditIcon style={
+  //           flashEditButton
+  //             ? {
+  //                 color: "primary.main",
+  //               }
+  //             : {
+  //                 color: "black",
+  //             }
+  //         }/>
+  //     ),
+  //     name: editingMyAvailability ? "View Responses" : "Edit Availability",
+  //     onClick: () => {
+  //       if (editingMyAvailability) {
+  //         setEditingMyAvailability(false);
+  //         setSelectedSlots([]);
+  //         setShowOthersAvailability(true);
+  //       } else {
+  //         setEditingMyAvailability(true);
+  //         setSelectedSlots(mySubmittedSlots);
+  //         setShowOthersAvailability(false);
+  //       }
+  //       setSpeedDialOpen(false);
+  //     },
+  //   },
+  //   {
+  //     icon: <LinkIcon />,
+  //     name: "Copy Link",
+  //     onClick: () => {
+  //       navigator.clipboard.writeText(window.location.href);
+  //       setSnackbar({
+  //         open: true,
+  //         message: "Event link copied to clipboard!",
+  //         severity: "success",
+  //       });
+  //     },
+  //   },
+  //   {
+  //     icon: <CalendarMonthIcon />,
+  //     name: "Import Google Calendar",
+  //     onClick: user ? fetchCalendarEvents : handleGoogleLogin,
+  //   },
+  // ];
 
   return (
     <Container maxWidth="lg" sx={{ py: 1 }}>
-      <Paper elevation={2} sx={{ p: 3, position: 'relative', minHeight: 400 }}>
+      <Paper elevation={2} sx={{ p: 3, position: "relative", minHeight: 400 }}>
         <EventTitleHeader event={event} />
         <EventActionButtons
           user={user}
@@ -98,9 +132,10 @@ const EventPageMobile: React.FC<any> = (props) => {
           handleSubmit={handleSubmit}
           flashEditButton={flashEditButton}
           setSnackbar={setSnackbar}
+          isMobile={true}
         />
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {(showOthersAvailability || responses) && (
+        <Box style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {showOthersAvailability && (
             <EventResponsesPanel
               showOthersAvailability={showOthersAvailability}
               setShowOthersAvailability={setShowOthersAvailability}
@@ -108,6 +143,7 @@ const EventPageMobile: React.FC<any> = (props) => {
               allUniqueUsers={allUniqueUsers}
               hoveredUserName={hoveredUserName}
               setHoveredUserName={setHoveredUserName}
+              isMobile={true}
             />
           )}
           <EventAvailabilitySection
@@ -117,9 +153,9 @@ const EventPageMobile: React.FC<any> = (props) => {
             setName={setName}
             theme={theme}
             availabilityGridProps={availabilityGridProps}
-            handleSlotHover={handleSlotHover}
-            handleSlotLeave={handleSlotLeave}
-            handleRequireEdit={handleRequireEdit}
+            onGridSlotHover={onGridSlotHover}
+            onGridSlotHoverLeave={onGridSlotHoverLeave}
+            onRequireEdit={openSpeedDialAndFlashEdit}
             hoveredUserName={hoveredUserName}
           />
         </Box>
@@ -130,10 +166,13 @@ const EventPageMobile: React.FC<any> = (props) => {
           title={"Whenly"}
         />
         {/* FAB SpeedDial */}
-        <SpeedDial
+        {/* <SpeedDial
           ariaLabel="Quick Actions"
           sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 1300 }}
           icon={<SpeedDialIcon />}
+          open={speedDialOpen}
+          onOpen={() => setSpeedDialOpen(true)}
+          onClose={() => setSpeedDialOpen(false)}
         >
           {actions.map((action) => (
             <SpeedDialAction
@@ -143,7 +182,7 @@ const EventPageMobile: React.FC<any> = (props) => {
               onClick={action.onClick}
             />
           ))}
-        </SpeedDial>
+        </SpeedDial> */}
       </Paper>
     </Container>
   );

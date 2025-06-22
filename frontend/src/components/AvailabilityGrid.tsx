@@ -22,23 +22,37 @@ interface GroupedSlots {
 }
 
 interface AvailabilityGridProps {
+  /** The event object containing all event data */
   event: any;
+  /** Time slots grouped by date or day of week */
   groupedByDate: GroupedSlots;
+  /** Array of currently selected slot IDs */
   selectedSlots: string[];
+  /** Function to set selected time slots (only when editing) */
   setSelectedSlots?: React.Dispatch<React.SetStateAction<string[]>>;
+  /** Whether to show others' availability (view mode) */
   showOthersAvailability: boolean;
+  /** All processed time slots for the grid */
   processedTimeSlots: TimeSlot[];
+  /** The MUI theme object */
   theme: any;
+  /** Handler for when a slot is hovered (view mode) */
   onSlotHoverChange?: (info: {
     slotId: string;
     availableUsers: string[];
     time: string;
     dayLabel: string;
   } | null) => void;
+  /** Handler to require edit mode (when not allowed to edit directly) */
   onRequireEdit?: () => void;
+  /** Whether the user is editing their own availability */
   editingMyAvailability: boolean;
+  /** Number of unique users who have responded */
   uniqueUserCount: number;
+  /** The user name to highlight in the grid (for hover in response panel) */
   highlightUserName?: string | null;
+  /** Handler for when the mouse leaves a slot (view mode) */
+  onSlotLeave?: () => void;
 }
 
 // Helper to get hour from 'HH:mm'
@@ -59,7 +73,6 @@ interface GridCellProps {
   showOthersAvailability: boolean;
   theme: any;
   onMouseDown: (e: React.MouseEvent) => void;
-  onMouseEnter: () => void;
   onTouchStart: (e: React.TouchEvent) => void;
   colIdx: number;
   rowIdx: number;
@@ -68,7 +81,7 @@ interface GridCellProps {
   selectedSlotsSet: Set<string>;
   isSelectable: boolean;
   days: string[];
-  onSlotHover: () => void;
+  onCellEnter: () => void;
   onSlotLeave: () => void;
   event: any;
   editingMyAvailability: boolean;
@@ -86,7 +99,6 @@ const GridCell: React.FC<GridCellProps> = React.memo(
     showOthersAvailability,
     theme,
     onMouseDown,
-    onMouseEnter,
     onTouchStart,
     colIdx,
     rowIdx,
@@ -95,7 +107,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(
     selectedSlotsSet,
     isSelectable,
     days,
-    onSlotHover,
+    onCellEnter,
     onSlotLeave,
     event,
     editingMyAvailability,
@@ -188,13 +200,8 @@ const GridCell: React.FC<GridCellProps> = React.memo(
     return (
       <Box
         onMouseDown={onMouseDown}
-        onMouseEnter={() => {
-          onMouseEnter();
-          onSlotHover();
-        }}
-        onMouseLeave={() => {
-          onSlotLeave();
-        }}
+        onMouseEnter={onCellEnter}
+        onMouseLeave={onSlotLeave || (() => {})}
         onTouchStart={onTouchStart}
         sx={{
           ...border,
@@ -236,6 +243,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   editingMyAvailability,
   uniqueUserCount,
   highlightUserName,
+  onSlotLeave,
 }) => {
   // Days (columns)
   let days = Object.keys(groupedByDate);
@@ -335,6 +343,16 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
         lastHour = hour;
       }
     });
+    // Ensure the last hour label is present at the bottom, corresponding to the event's end time
+    if (timeLabels.length > 0) {
+      const lastSlotStart = parse(timeLabels[timeLabels.length - 1], "HH:mm", new Date());
+      const endTime = addMinutes(lastSlotStart, 15);
+      const endHour = format(endTime, "H");
+      const lastLabelHour = labels.length > 0 ? format(parse(timeLabels[timeLabels.length - 1], "HH:mm", new Date()), "H") : null;
+      if (endHour !== lastLabelHour) {
+        labels.push({ label: getHourLabel(format(endTime, "HH:mm")), rowIdx: timeLabels.length });
+      }
+    }
     return labels;
   }, [timeLabels]);
 
@@ -454,22 +472,40 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     [setSelectedSlots, onRequireEdit]
   );
 
-  const handleCellMouseEnter = useCallback(
-    (row: number, col: number, slotId: string) => {
-      if (!setSelectedSlots) return;
-      if (isDragging && lastDragCell) {
-        const path = getCellsBetween(lastDragCell, { row, col });
-        setDraggedSlots((prev) => {
-          const next = new Set(prev);
-          path.forEach(({ row, col }) => {
-            if (grid[row] && grid[row][col]) next.add(grid[row][col].slotId);
+  const handleCellEnter = useCallback(
+    (row: number, col: number, cell: { slotId: string; availableUsers: string[]; time: string }, isSelected: boolean) => {
+      if (editingMyAvailability) {
+        // Drag/selection logic
+        if (!setSelectedSlots) {
+          if (typeof onRequireEdit === "function") onRequireEdit();
+          return;
+        }
+        if (isDragging && lastDragCell) {
+          const path = getCellsBetween(lastDragCell, { row, col });
+          setDraggedSlots((prev) => {
+            const next = new Set(prev);
+            path.forEach(({ row, col }) => {
+              if (grid[row] && grid[row][col]) next.add(grid[row][col].slotId);
+            });
+            return next;
           });
-          return next;
+          setLastDragCell({ row, col });
+        }
+      } else {
+        // Hover info logic
+        const dayLabel =
+          event?.eventType === "daysOfWeek"
+            ? days[col]
+            : format(new Date(days[col] + "T00:00:00"), "MMM d, EEE");
+        setLocalHoveredCell({
+          slotId: cell.slotId,
+          availableUsers: cell.availableUsers,
+          time: cell.time,
+          dayLabel,
         });
-        setLastDragCell({ row, col });
       }
     },
-    [setSelectedSlots, isDragging, lastDragCell, getCellsBetween, grid]
+    [editingMyAvailability, setSelectedSlots, onRequireEdit, isDragging, lastDragCell, getCellsBetween, grid, event?.eventType, days]
   );
 
   // Local hover state to avoid parent re-renders
@@ -580,26 +616,6 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     };
   }, [isTouchDragging]);
 
-  // Instead of calling onSlotHoverChange directly, call setLocalHoveredCell
-  const handleCellHover = useCallback(
-    (cell: { slotId: string; availableUsers: string[]; time: string }, colIdx: number) => {
-      const dayLabel =
-        event?.eventType === "daysOfWeek"
-          ? days[colIdx]
-          : format(new Date(days[colIdx] + "T00:00:00"), "MMM d, EEE");
-      setLocalHoveredCell({
-        slotId: cell.slotId,
-        availableUsers: cell.availableUsers,
-        time: cell.time,
-        dayLabel,
-      });
-    },
-    [event?.eventType, days]
-  );
-  const handleCellHoverLeave = useCallback(() => {
-    setLocalHoveredCell(null);
-  }, []);
-
   return (
     <Box sx={{ width: "100%", overflowX: "auto", pb: 2 }}>
       {/* Header row: day headers */}
@@ -609,7 +625,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
           gridTemplateColumns: `repeat(${days.length}, 1fr)`,
           alignItems: "center",
           borderBottom: `1px solid ${theme.palette.divider}`,
-          ml: "60px",
+          ml: { xs: "41px", md: "48px" },
           // no margin bottom
         }}
       >
@@ -636,20 +652,20 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
       >
         {/* Time labels (hour, aligned to top of hour block) */}
         <Box
-          sx={{ width: "60px", flexShrink: 0, position: "relative", zIndex: 1 }}
+          sx={{ width: { xs: "41px", md: "48px" }, flexShrink: 0, position: "relative", zIndex: 1 }}
         >
           {hourLabels.map(({ label, rowIdx }, i) => (
             <Box
               key={label + rowIdx}
               sx={{
                 position: "absolute",
-                top: rowIdx * cellHeight - 4, // Align top of hour to above cell top
+                top: rowIdx * cellHeight - 7, // Align top of hour to above cell top
                 height: cellHeight,
                 display: "flex",
                 alignItems: "flex-start",
                 justifyContent: "flex-end",
                 pr: 1,
-                fontSize: 13,
+                fontSize: { xs: 11, md: 13 },
                 color: theme.palette.text.secondary,
                 pointerEvents: "none",
                 width: "100%",
@@ -689,10 +705,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                 handleCellMouseDown(rowIdx, colIdx, cell.slotId, isSelected);
               };
 
-              const onCellMouseEnter = () => {
-                if (!isSelectable) return;
-                handleCellMouseEnter(rowIdx, colIdx, cell.slotId);
-              };
+              const onCellEnter = () => handleCellEnter(rowIdx, colIdx, cell, isSelected);
 
               // Touch handlers for this cell
               const onCellTouchStart = (e: React.TouchEvent) => {
@@ -720,7 +733,6 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   showOthersAvailability={showOthersAvailability}
                   theme={theme}
                   onMouseDown={onCellMouseDown}
-                  onMouseEnter={onCellMouseEnter}
                   onTouchStart={onCellTouchStart}
                   colIdx={colIdx}
                   rowIdx={rowIdx}
@@ -729,8 +741,8 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   selectedSlotsSet={selectedSlotsSet}
                   isSelectable={isSelectable}
                   days={days}
-                  onSlotHover={() => handleCellHover(cell, colIdx)}
-                  onSlotLeave={handleCellHoverLeave}
+                  onCellEnter={onCellEnter}
+                  onSlotLeave={onSlotLeave || (() => {})}
                   event={event}
                   editingMyAvailability={editingMyAvailability}
                   uniqueUserCount={uniqueUserCount}

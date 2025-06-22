@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -6,11 +6,11 @@ import {
   Button,
   Box,
   Typography,
-  useTheme
-} from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
-import { useAuth } from '../contexts/AuthContext';
-import config from '../config';
+  useTheme,
+} from "@mui/material";
+import GoogleIcon from "@mui/icons-material/Google";
+import { useAuth } from "../contexts/AuthContext";
+import config from "../config";
 
 interface SignInModalProps {
   open: boolean;
@@ -27,7 +27,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ open, onClose, title }) => {
     const checkAuthCallback = async () => {
       try {
         const response = await fetch(`${config.apiUrl}/api/auth/status`, {
-          credentials: 'include'
+          credentials: "include",
         });
         if (response.ok) {
           const data = await response.json();
@@ -37,7 +37,7 @@ const SignInModal: React.FC<SignInModalProps> = ({ open, onClose, title }) => {
           }
         }
       } catch (error) {
-        console.error('Error checking auth status:', error);
+        console.error("Error checking auth status:", error);
       }
     };
 
@@ -52,24 +52,22 @@ const SignInModal: React.FC<SignInModalProps> = ({ open, onClose, title }) => {
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="xs"
-      fullWidth
-    >
-      <DialogTitle>
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: { xs: 0, md: 1 } }}>
         <Typography variant="h6" component="div" align="center">
           Sign in to {title}
         </Typography>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 2,
-          py: 2
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            pt: 2,
+            pb: 0,
+          }}
+        >
           <Button
             variant="outlined"
             startIcon={<GoogleIcon />}
@@ -79,28 +77,30 @@ const SignInModal: React.FC<SignInModalProps> = ({ open, onClose, title }) => {
             sx={{
               borderColor: theme.palette.divider,
               color: theme.palette.text.primary,
-              '&:hover': {
+              "&:hover": {
                 borderColor: theme.palette.primary.main,
                 backgroundColor: theme.palette.action.hover,
-              }
+              },
             }}
           >
             Continue with Google
           </Button>
-          
+
           {/* Placeholder for future sign-in options */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1,
-            opacity: 0.5,
-            pointerEvents: 'none'
-          }}>
-            <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              opacity: 0.5,
+              pointerEvents: "none",
+            }}
+          >
+            <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
             <Typography variant="body2" color="text.secondary">
               More options coming soon
             </Typography>
-            <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
+            <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
           </Box>
         </Box>
       </DialogContent>
@@ -108,4 +108,4 @@ const SignInModal: React.FC<SignInModalProps> = ({ open, onClose, title }) => {
   );
 };
 
-export default SignInModal; 
+export default SignInModal;

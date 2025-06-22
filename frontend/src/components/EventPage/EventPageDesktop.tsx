@@ -33,9 +33,9 @@ const EventPageDesktop: React.FC<any> = (props) => {
     setHoveredUserName,
     theme,
     availabilityGridProps,
-    handleSlotHover,
-    handleSlotLeave,
-    handleRequireEdit,
+    onGridSlotHover,
+    onGridSlotHoverLeave,
+    onRequireEdit,
     snackbar,
     isSignInModalOpen,
     setName,
@@ -68,6 +68,7 @@ const EventPageDesktop: React.FC<any> = (props) => {
             handleSubmit={handleSubmit}
             flashEditButton={flashEditButton}
             setSnackbar={setSnackbar}
+            isMobile={false}
           />
         </Box>
         <Box style={{ display: "flex", gap: 24 }}>
@@ -80,6 +81,7 @@ const EventPageDesktop: React.FC<any> = (props) => {
                 allUniqueUsers={allUniqueUsers}
                 hoveredUserName={hoveredUserName}
                 setHoveredUserName={setHoveredUserName}
+                isMobile={false}
               />
             )}
           </Box>
@@ -91,9 +93,9 @@ const EventPageDesktop: React.FC<any> = (props) => {
               setName={setName}
               theme={theme}
               availabilityGridProps={availabilityGridProps}
-              handleSlotHover={handleSlotHover}
-              handleSlotLeave={handleSlotLeave}
-              handleRequireEdit={handleRequireEdit}
+              onGridSlotHover={onGridSlotHover}
+              onGridSlotHoverLeave={onGridSlotHoverLeave}
+              onRequireEdit={onRequireEdit}
               hoveredUserName={hoveredUserName}
             />
           </Box>
