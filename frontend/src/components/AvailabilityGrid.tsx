@@ -29,13 +29,12 @@ interface AvailabilityGridProps {
   showOthersAvailability: boolean;
   processedTimeSlots: TimeSlot[];
   theme: any;
-  onSlotHover: (
-    slotId: string,
-    availableUsers: string[],
-    time: string,
-    dayLabel: string
-  ) => void;
-  onSlotLeave: () => void;
+  onSlotHoverChange?: (info: {
+    slotId: string;
+    availableUsers: string[];
+    time: string;
+    dayLabel: string;
+  } | null) => void;
   onRequireEdit?: () => void;
   editingMyAvailability: boolean;
   uniqueUserCount: number;
@@ -69,12 +68,7 @@ interface GridCellProps {
   selectedSlotsSet: Set<string>;
   isSelectable: boolean;
   days: string[];
-  onSlotHover: (
-    slotId: string,
-    availableUsers: string[],
-    time: string,
-    dayLabel: string
-  ) => void;
+  onSlotHover: () => void;
   onSlotLeave: () => void;
   event: any;
   editingMyAvailability: boolean;
@@ -196,11 +190,7 @@ const GridCell: React.FC<GridCellProps> = React.memo(
         onMouseDown={onMouseDown}
         onMouseEnter={() => {
           onMouseEnter();
-          const dayLabel =
-            event?.eventType === "daysOfWeek"
-              ? days[colIdx]
-              : format(new Date(days[colIdx] + "T00:00:00"), "MMM d, EEE");
-          onSlotHover(cell.slotId, cell.availableUsers, cell.time, dayLabel);
+          onSlotHover();
         }}
         onMouseLeave={() => {
           onSlotLeave();
@@ -241,8 +231,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   showOthersAvailability,
   processedTimeSlots,
   theme,
-  onSlotHover,
-  onSlotLeave,
+  onSlotHoverChange,
   onRequireEdit,
   editingMyAvailability,
   uniqueUserCount,
@@ -483,6 +472,26 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     [setSelectedSlots, isDragging, lastDragCell, getCellsBetween, grid]
   );
 
+  // Local hover state to avoid parent re-renders
+  const [localHoveredCell, setLocalHoveredCell] = useState<{
+    slotId: string;
+    availableUsers: string[];
+    time: string;
+    dayLabel: string;
+  } | null>(null);
+  const lastParentHoverRef = useRef<string | null>(null);
+
+  // Debounced call to parent onSlotHoverChange
+  useEffect(() => {
+    if (!onSlotHoverChange) return;
+    // Only call parent if hovered cell actually changed
+    if (localHoveredCell?.slotId !== lastParentHoverRef.current) {
+      lastParentHoverRef.current = localHoveredCell?.slotId || null;
+      onSlotHoverChange(localHoveredCell);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localHoveredCell]);
+
   // --- Touch handlers ---
   // Remove per-cell onTouchMove handler, only use onTouchStart
   const handleCellTouchStart = useCallback(
@@ -570,6 +579,26 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
       gridEl.removeEventListener("touchstart", preventScrollIfDragging);
     };
   }, [isTouchDragging]);
+
+  // Instead of calling onSlotHoverChange directly, call setLocalHoveredCell
+  const handleCellHover = useCallback(
+    (cell: { slotId: string; availableUsers: string[]; time: string }, colIdx: number) => {
+      const dayLabel =
+        event?.eventType === "daysOfWeek"
+          ? days[colIdx]
+          : format(new Date(days[colIdx] + "T00:00:00"), "MMM d, EEE");
+      setLocalHoveredCell({
+        slotId: cell.slotId,
+        availableUsers: cell.availableUsers,
+        time: cell.time,
+        dayLabel,
+      });
+    },
+    [event?.eventType, days]
+  );
+  const handleCellHoverLeave = useCallback(() => {
+    setLocalHoveredCell(null);
+  }, []);
 
   return (
     <Box sx={{ width: "100%", overflowX: "auto", pb: 2 }}>
@@ -700,8 +729,8 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   selectedSlotsSet={selectedSlotsSet}
                   isSelectable={isSelectable}
                   days={days}
-                  onSlotHover={onSlotHover}
-                  onSlotLeave={onSlotLeave}
+                  onSlotHover={() => handleCellHover(cell, colIdx)}
+                  onSlotLeave={handleCellHoverLeave}
                   event={event}
                   editingMyAvailability={editingMyAvailability}
                   uniqueUserCount={uniqueUserCount}
@@ -717,4 +746,4 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   );
 };
 
-export default AvailabilityGrid;
+export default React.memo(AvailabilityGrid);
