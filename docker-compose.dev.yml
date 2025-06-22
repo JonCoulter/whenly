@@ -1,5 +1,12 @@
 services:
-  backend:
-    environment:
-      - FLASK_ENV=development
-
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5137:5137"
+    networks:
+      - app-net

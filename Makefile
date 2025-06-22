@@ -9,7 +9,7 @@ BACKUP_FILE=$(BACKUP_DIR)/$(POSTGRES_DB)_backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 # Production: build and run all services
 prod:
-	$(DC) up -d --build
+	$(DC) -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # Development: use dev overrides for hot reload, code mounting, etc.
 dev:

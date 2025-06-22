@@ -237,7 +237,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     days = orderedIndices.map(idx => dayOrder[idx]);
   }
 
-  // Build time labels (rows) from processedTimeSlots
+  // Build time labels
   const timeLabels = useMemo(() => {
     let minTime: string | null = null;
     let maxTime: string | null = null;
@@ -250,19 +250,17 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
 
     const times: string[] = [];
     let current = parse(minTime, 'HH:mm', new Date());
-    // Ensure we go up to but not including the end time of the last slot interval
     const lastSlotStartTime = parse(maxTime, 'HH:mm', new Date()); 
     while (current < lastSlotStartTime) {
       times.push(format(current, 'HH:mm'));
       current = addMinutes(current, 15);
     }
-    // Add the last slot start time itself
     times.push(format(lastSlotStartTime, 'HH:mm'));
 
     return times;
   }, [processedTimeSlots]);
 
-  // Build a map for quick lookup of available users
+  // Map of available users for each slot
   const slotAvailabilityMap = useMemo(() => {
     const map = new Map<string, string[]>();
     processedTimeSlots.forEach(slot => {
@@ -301,17 +299,19 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     return labels;
   }, [timeLabels]);
 
-  // --- Click and drag selection state ---
+  // Grid ref
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // Click and drag selection state
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'deselect' | null>(null);
   const [draggedSlots, setDraggedSlots] = useState<Set<string>>(new Set());
   const [lastDragCell, setLastDragCell] = useState<{ row: number; col: number } | null>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
   // Touch drag state
   const [isTouchDragging, setIsTouchDragging] = useState(false);
   const [lastTouchCell, setLastTouchCell] = useState<{ row: number; col: number } | null>(null);
 
-  // Helper: get all cells between two points (inclusive, straight line)
+  // Get all cells between two points (inclusive, straight line)
   const getCellsBetween = useCallback(
     (
       start: { row: number; col: number },
@@ -332,7 +332,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     []
   );
 
-  // Mouse up handler (global)
+  // Mouse up handler
   useEffect(() => {
     const handleMouseUp = () => {
       if (isDragging && dragMode) {
@@ -356,7 +356,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [isDragging, dragMode, draggedSlots, setSelectedSlots]);
 
-  // Touch end handler (global)
+  // Touch end handler
   useEffect(() => {
     const handleTouchEnd = (e: TouchEvent) => {
       if (isTouchDragging && dragMode) {
@@ -384,7 +384,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     };
   }, [isTouchDragging, dragMode, draggedSlots, setSelectedSlots]);
 
-  // Memoized Set for efficient selectedSlots lookup
+  // Memoized Set
   const selectedSlotsSet = useMemo(() => new Set(selectedSlots), [selectedSlots]);
 
   // Cell mouse handlers
@@ -468,7 +468,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     };
   }, [isTouchDragging, lastTouchCell, days.length, timeLabels.length, getCellsBetween, grid, cellHeight]);
 
-  // Prevent scroll on touch drag by adding non-passive listeners (keep this for touchstart)
+  // Prevent scroll on touch drag by adding non-passive listeners
   useEffect(() => {
     const gridEl = gridRef.current;
     if (!gridEl) return;
@@ -521,10 +521,10 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                 top: rowIdx * cellHeight - 4, // Align top of hour to above cell top
                 height: cellHeight,
                 display: 'flex',
-                alignItems: 'flex-start', // Align to top
+                alignItems: 'flex-start',
                 justifyContent: 'flex-end',
-                pr: 1, // Adjusted padding right
-                fontSize: 13, // Slightly smaller font size
+                pr: 1,
+                fontSize: 13,
                 color: theme.palette.text.secondary,
                 pointerEvents: 'none',
                 width: '100%'
@@ -533,10 +533,9 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
               {label}
             </Box>
           ))}
-          {/* Spacer to ensure full height */}
           <Box sx={{ height: timeLabels.length * cellHeight }} />
         </Box>
-        {/* The grid itself (no time label column) */}
+        {/* Grid*/}
         <Box
           ref={gridRef}
           sx={{
@@ -566,11 +565,11 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
               };
               
               const onCellMouseEnter = () => {
-                if (!isSelectable) return; // Guard logic inside handler
+                if (!isSelectable) return;
                 handleCellMouseEnter(rowIdx, colIdx, cell.slotId);
               };
 
-              // --- Touch handlers for this cell ---
+              // Touch handlers for this cell
               const onCellTouchStart = (e: React.TouchEvent) => {
                 handleCellTouchStart(rowIdx, colIdx, cell.slotId, isSelected, e);
               };

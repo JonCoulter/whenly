@@ -71,7 +71,12 @@ const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
           <Box
             component={RouterLink}
             to="/"
-            sx={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 1 }}
+            sx={{
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
           >
             <Typography
               variant="h5"
