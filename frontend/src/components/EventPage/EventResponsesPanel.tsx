@@ -99,7 +99,7 @@ const EventResponsesPanel: React.FC<any> = (props) => {
               }
               return (
                 <ListItem
-                  key={uniqueUser}
+                  key={uniqueUser as string}
                   sx={{
                     py: 0.5,
                     pl: 0.2,
@@ -132,12 +132,12 @@ const EventResponsesPanel: React.FC<any> = (props) => {
                         transition: "box-shadow 0.2s, border 0.2s",
                       }}
                     >
-                      {uniqueUser.charAt(0)}
+                      {(uniqueUser as string).charAt(0)}
                     </Avatar>
                   </ListItemIcon>
                   <ListItemText
-                    primary={uniqueUser}
-                    onMouseEnter={() => setHoveredUserName(uniqueUser)}
+                    primary={uniqueUser as string}
+                    onMouseEnter={() => setHoveredUserName(uniqueUser as string)}
                     onMouseLeave={() => setHoveredUserName(null)}
                     primaryTypographyProps={{
                       variant: "body2",
