@@ -18,7 +18,7 @@ const EventAvailabilitySection: React.FC<any> = (props) => {
   return (
     <Box>
       {editingMyAvailability && !user && (
-        <Box sx={{ mb: 2, display: "flex", justifyContent: { xs: "center", md: "flex-end" } }}>
+        <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
           <input
             type="text"
             value={name}

@@ -40,7 +40,7 @@ const EventActionButtons: React.FC<any> = (props) => {
       <Button
         variant="outlined"
         color="primary"
-        size= { isMobile ? "medium" : "large" }
+        size={isMobile ? "medium" : "large"}
         onClick={() => {
           navigator.clipboard.writeText(window.location.href);
           if (props.setSnackbar) {
@@ -57,19 +57,22 @@ const EventActionButtons: React.FC<any> = (props) => {
           color: "text.secondary",
           width: "auto",
           height: isMobile ? "36px" : "41px",
+          px: isMobile ? "12px" : "18px",
           "&:hover": {
             borderColor: "primary.main",
             backgroundColor: "transparent",
           },
         }}
       >
-        <LinkIcon />
-        {isMobile ? "" : "Copy link"}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <LinkIcon sx={{ mr: isMobile ? 0 : 1 }} />
+          {isMobile ? "" : <Box sx={{ ml: "2px" }}>Copy link</Box>}
+        </Box>
       </Button>
       <Button
         variant="outlined"
         color="primary"
-        size= { isMobile ? "medium" : "large" }
+        size={isMobile ? "medium" : "large"}
         onClick={user ? fetchCalendarEvents : handleGoogleLogin}
         disabled={isImporting}
         sx={{
@@ -78,17 +81,28 @@ const EventActionButtons: React.FC<any> = (props) => {
           color: "text.secondary",
           width: "auto",
           height: isMobile ? "36px" : "41px",
+          px: isMobile ? "12px" : "18px",
           "&:hover": {
             borderColor: "primary.main",
             backgroundColor: "transparent",
           },
         }}
       >
-        <CalendarMonthIcon />
-        {isMobile ? "" : isImporting ? "Importing..." : "Import Google Calendar"}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <CalendarMonthIcon sx={{ mr: isMobile ? 0 : 1 }} />
+        <Box sx={{ml: isMobile ? 0 : "2px"}}>
+        {isMobile
+          ? ""
+          : isImporting
+              ? "Importing..."
+              : "Import Google Calendar"}
+          </Box>
+        </Box>
       </Button>
       {editingMyAvailability ? (
-        <Box sx={{ display: "flex", gap: 1, width: { xs: "100%", md: "auto" } }}>
+        <Box
+          sx={{ display: "flex", gap: 1, width: { xs: "100%", md: "auto" } }}
+        >
           <IconButton
             disabled={isSubmitting}
             onClick={() => {
@@ -114,10 +128,14 @@ const EventActionButtons: React.FC<any> = (props) => {
             }
             onClick={handleSubmit}
             sx={{
-              minWidth: isMobile ? "60px" :mySubmittedSlots.length > 0 ? "112px" : "160px",
+              minWidth: isMobile
+                ? "60px"
+                : mySubmittedSlots.length > 0
+                ? "112px"
+                : "160px",
               textTransform: "none",
-              width: { xs: "100%", md: "auto" },
               height: isMobile ? "36px" : "41px",
+              width: { xs: "100%", md: "auto" },
             }}
           >
             {isSubmitting
@@ -146,8 +164,8 @@ const EventActionButtons: React.FC<any> = (props) => {
             boxShadow: flashEditButton ? "0 0 0 4px #1976d2aa" : undefined,
             backgroundColor: flashEditButton ? "primary.light" : undefined,
             opacity: flashEditButton ? 0.8 : 1,
-            width: { xs: "100%", md: "auto" },
             height: isMobile ? "36px" : "41px",
+            width: { xs: "100%", md: "auto" },
           }}
         >
           {mySubmittedSlots.length > 0
