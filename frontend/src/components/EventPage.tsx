@@ -275,7 +275,7 @@ const EventPage: React.FC = () => {
   );
 
   // Memoize the hover handlers to avoid unnecessary re-renders
-  const handleSlotHover = useCallback((info) => {
+  const handleSlotHover = useCallback((info: any) => {
     setHoveredSlotInfo(info);
   }, []);
   const handleSlotLeave = useCallback(() => {

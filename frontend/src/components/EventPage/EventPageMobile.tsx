@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Paper, SpeedDial, SpeedDialAction, SpeedDialIcon } from "@mui/material";
+import { Box, Container, Paper, SpeedDial, SpeedDialAction, SpeedDialIcon } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import LinkIcon from "@mui/icons-material/Link";
