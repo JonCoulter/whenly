@@ -694,7 +694,7 @@ const EventPage: React.FC = () => {
       </Helmet>
       <Container maxWidth="lg" sx={{ py: 1 }}>
         <Paper elevation={2} sx={{ p: 3 }}>
-          {/* Title and Button Row (responsive) */}
+          {/* Title and Button Row */}
           <Box
             sx={{
               display: "flex",
@@ -707,14 +707,14 @@ const EventPage: React.FC = () => {
             }}
           >
             <Box sx={{ flex: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "stretch", gap: 1 }}>
                 <Box
                   sx={{
                     width: 6,
-                    height: 36,
                     borderRadius: 2,
                     background: (theme) => theme.palette.primary.main,
                     mt: "6.5px",
+                    mb: "6.5px",
                     mr: 0.5,
                     boxShadow: 1,
                   }}
@@ -728,6 +728,8 @@ const EventPage: React.FC = () => {
                     textAlign: { xs: "left", md: "left" },
                     width: "100%",
                     pr: 1.5,
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
                   {event?.name || "Event Details"}
@@ -773,7 +775,7 @@ const EventPage: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-            {/* Button Stack: centered vertically on mobile, top-aligned on desktop */}
+            {/* Button Stack */}
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={1}
@@ -967,7 +969,7 @@ const EventPage: React.FC = () => {
                       Responses
                     </Typography>
                   </Box>
-                  {/* Show others' availability toggle moved here */}
+                  {/* Show others' availability toggle */}
                   <FormControlLabel
                     control={
                       <Switch
@@ -994,7 +996,7 @@ const EventPage: React.FC = () => {
                   />
                   <Divider sx={{ my: 1.5 }} />
                   <Box>
-                    {/* Top label */}
+                    {/* Top label for hovered slot */}
                     {hoveredSlotInfo ? (
                       <Typography
                         variant="subtitle2"
@@ -1022,7 +1024,7 @@ const EventPage: React.FC = () => {
                         Hover to view availability
                       </Typography>
                     )}
-                    {/* Single list of all responders, with hover styling */}
+                    {/* Single list of all responders */}
                     {allUniqueUsers.size > 0 ? (
                       <List dense disablePadding>
                         {Array.from(allUniqueUsers).map((uniqueUser) => {
