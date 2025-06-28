@@ -55,7 +55,7 @@ import {
 import config from "../config";
 import { useAuth } from "../contexts/AuthContext";
 import SignInModal from "./SignInModal";
-import AvailabilityGrid from "./AvailabilityGrid";
+import AvailabilityGrid from "./AvailabilityGrid/AvailabilityGrid";
 import LinkIcon from "@mui/icons-material/Link";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import storageService from "../services/storageService";

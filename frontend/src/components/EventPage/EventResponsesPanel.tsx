@@ -23,6 +23,8 @@ const EventResponsesPanel: React.FC<any> = (props) => {
     setHoveredUserName,
     isMobile,
   } = props;
+  console.log('hoveredSlotInfo (top)', hoveredSlotInfo);
+  console.log('allUniqueUsers (top)', allUniqueUsers);
   return (
     <Box
       sx={{
@@ -122,10 +124,15 @@ const EventResponsesPanel: React.FC<any> = (props) => {
             }}
           >
             {Array.from(allUniqueUsers).map((uniqueUser) => {
+              // Normalize for comparison
+              const normalize = (s: string) => s.trim().toLowerCase();
               let isAvailable = false;
               if (hoveredSlotInfo) {
-                isAvailable =
-                  hoveredSlotInfo.availableUsers.includes(uniqueUser);
+                isAvailable = hoveredSlotInfo.availableUsers
+                  .map(normalize)
+                  .includes(normalize(uniqueUser));
+                // Debug log
+                console.log('Panel check:', hoveredSlotInfo.availableUsers, uniqueUser, isAvailable);
               }
               return (
                 <ListItem

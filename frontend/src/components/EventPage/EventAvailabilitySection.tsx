@@ -1,6 +1,6 @@
 import React from "react";
 import { Box } from "@mui/material";
-import AvailabilityGrid from "../AvailabilityGrid";
+import AvailabilityGrid from "../AvailabilityGrid/AvailabilityGrid";
 
 const EventAvailabilitySection: React.FC<any> = (props) => {
   const {
