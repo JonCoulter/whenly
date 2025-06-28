@@ -334,7 +334,7 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
     // Only call parent if hovered cell actually changed
     if (localHoveredCell?.slotId !== lastParentHoverRef.current) {
       lastParentHoverRef.current = localHoveredCell?.slotId || null;
-      console.log('localHoveredCell (grid)', localHoveredCell);
+      console.log('localHoveredCell (AvailabilityGrid)', localHoveredCell);
       onSlotHoverChange(localHoveredCell);
     }
   }, [localHoveredCell]);

@@ -41,6 +41,7 @@ const EventPageDesktop: React.FC<any> = (props) => {
     setName,
     ...rest
   } = props;
+  console.log('hoveredSlotInfo (eventPageDesktop)', hoveredSlotInfo);
   return (
     <Container maxWidth="lg" sx={{ py: 1 }}>
       <Paper elevation={2} sx={{ p: 3 }}>

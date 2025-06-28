@@ -23,8 +23,8 @@ const EventResponsesPanel: React.FC<any> = (props) => {
     setHoveredUserName,
     isMobile,
   } = props;
-  console.log('hoveredSlotInfo (top)', hoveredSlotInfo);
-  console.log('allUniqueUsers (top)', allUniqueUsers);
+  console.log('hoveredSlotInfo (eventResponsePanel)', hoveredSlotInfo);
+  console.log('allUniqueUsers (eventResponsePanel)', allUniqueUsers);
   return (
     <Box
       sx={{

@@ -276,6 +276,7 @@ const EventPage: React.FC = () => {
 
   // Rename hover handlers for clarity
   const onGridSlotHover = useCallback((info: any) => {
+    console.log('onGridSlotHover (eventPage)', info);
     setHoveredSlotInfo(info);
   }, []);
   const onGridSlotHoverLeave = useCallback(() => {

@@ -124,7 +124,7 @@ const GridBody: React.FC<GridBodyProps> = ({
             selectedSlotsSet={selectedSlotsSet}
             isSelectable={isSelectable}
             days={days}
-            onCellEnter={() => handleCellEnter(rowIdx, colIdx, cell, isSelected)}
+            onCellEnter={onCellEnter}
             onSlotLeave={onSlotLeave || (() => {})}
             event={event}
             editingMyAvailability={editingMyAvailability}
