@@ -166,6 +166,7 @@ const EventActionButtons: React.FC<any> = (props) => {
             opacity: flashEditButton ? 0.8 : 1,
             height: isMobile ? "36px" : "41px",
             width: { xs: "100%", md: "auto" },
+            fontSize: { xs: "0.8rem", sm: "1rem" },
           }}
         >
           {mySubmittedSlots.length > 0

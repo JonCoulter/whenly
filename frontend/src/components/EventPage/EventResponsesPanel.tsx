@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -12,6 +12,9 @@ import {
   Avatar,
 } from "@mui/material";
 import { format, parse } from "date-fns";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import Collapse from "@mui/material/Collapse";
 
 const EventResponsesPanel: React.FC<any> = (props) => {
   const {
@@ -23,6 +26,115 @@ const EventResponsesPanel: React.FC<any> = (props) => {
     setHoveredUserName,
     isMobile,
   } = props;
+  const [showAllResponses, setShowAllResponses] = useState(false);
+
+  const uniqueUsersArray = Array.from(allUniqueUsers);
+
+  const initialVisibleCount = isMobile
+    ? showAllResponses
+      ? 8
+      : 7
+    : uniqueUsersArray.length;
+
+  const firstListUsers = isMobile
+    ? uniqueUsersArray.slice(0, 8)
+    : uniqueUsersArray;
+
+  const expandedListUsers =
+    isMobile && showAllResponses && uniqueUsersArray.length > 8
+      ? uniqueUsersArray.slice(8)
+      : [];
+
+  // Define shared styles for both lists
+  const listStyles = {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr 1fr",
+      md: "1fr",
+    },
+    rowGap: 0.5,
+    width: "100%",
+    overflowX: "hidden",
+    minHeight: isMobile ? 120 : 'auto', // Optional visual polish
+  };
+
+  const expandedListStyles = {
+    ...listStyles,
+    minHeight: "2px",
+    marginTop: "4px",
+    marginBottom: expandedListUsers.length % 2 === 0 ? "30px" : "0px",
+  };
+
+  const renderUserListItem = (uniqueUser: any) => {
+    let isAvailable = false;
+    if (hoveredSlotInfo) {
+      isAvailable = hoveredSlotInfo.availableUsers.includes(uniqueUser);
+    }
+    return (
+      <ListItem
+        key={uniqueUser as string}
+        sx={{
+          py: 0.5,
+          pl: 0.2,
+          pr: 0,
+          borderRadius: 2,
+          transition: "background 0.2s, box-shadow 0.2s",
+          "&:hover": {
+            background: (theme) => theme.palette.action.hover,
+            boxShadow: 2,
+          },
+          mb: 0.5,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 }, pl: 0.2 }}>
+          <Avatar
+            sx={{
+              width: { xs: 22, md: 28 },
+              height: { xs: 22, md: 28 },
+              bgcolor: hoveredSlotInfo
+                ? isAvailable
+                  ? "primary.main"
+                  : "secondary.main"
+                : "grey.400",
+              opacity: hoveredSlotInfo && !isAvailable ? 0.7 : 1,
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: { xs: "0.9rem", md: "1.1rem" },
+              border: (theme) => `2px solid ${theme.palette.background.paper}`,
+              boxShadow: 1,
+              transition: "box-shadow 0.2s, border 0.2s",
+            }}
+          >
+            {(uniqueUser as string).charAt(0)}
+          </Avatar>
+        </ListItemIcon>
+        <ListItemText
+          primary={uniqueUser as string}
+          onMouseEnter={() => setHoveredUserName(uniqueUser as string)}
+          onMouseLeave={() => setHoveredUserName(null)}
+          primaryTypographyProps={{
+            variant: "body2",
+            fontSize: { xs: "0.7rem", md: "1rem" },
+            sx: hoveredSlotInfo
+              ? isAvailable
+                ? {
+                    fontWeight: 500,
+                  }
+                : {
+                    color: "text.disabled",
+                    textDecoration: "line-through",
+                  }
+              : {
+                  fontWeight: 500,
+                },
+          }}
+        />
+      </ListItem>
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -103,98 +215,96 @@ const EventResponsesPanel: React.FC<any> = (props) => {
               fontSize: { xs: "0.9rem", md: "1rem" },
             }}
           >
-            {isMobile ? "Tap to view availability" : "Hover to view availability"}
+            {isMobile
+              ? "Tap to view availability"
+              : "Hover to view availability"}
           </Typography>
         )}
-        {allUniqueUsers.size > 0 ? (
-          <List
-            dense
-            disablePadding
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr 1fr",
-                md: "1fr",
-              },
-              gap: 0,
-              width: "100%",
-              overflowX: "hidden",
-            }}
-          >
-            {Array.from(allUniqueUsers).map((uniqueUser) => {
-              let isAvailable = false;
-              if (hoveredSlotInfo) {
-                isAvailable =
-                  hoveredSlotInfo.availableUsers.includes(uniqueUser);
-              }
-              return (
+        {uniqueUsersArray.length > 0 ? (
+          <Box sx={{ position: "relative" }}>
+            <List
+              dense
+              disablePadding
+              sx={listStyles}
+            >
+              {firstListUsers.map(renderUserListItem)}
+            </List>
+
+            <Box>
+              <Collapse in={showAllResponses} unmountOnExit>
+                <List
+                  dense
+                  disablePadding
+                  sx={expandedListStyles}
+                >
+                  {expandedListUsers.map(renderUserListItem)}
+                </List>
+              </Collapse>
+            </Box>
+
+            {isMobile && uniqueUsersArray.length > 8 && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  background: (theme) => theme.palette.background.paper,
+                  borderRadius: 2,
+                  boxShadow: 2,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                }}
+              >
                 <ListItem
-                  key={uniqueUser as string}
                   sx={{
                     py: 0.5,
-                    pl: 0.2,
-                    pr: 0,
+                    px: 0,
                     borderRadius: 2,
                     transition: "background 0.2s, box-shadow 0.2s",
                     "&:hover": {
                       background: (theme) => theme.palette.action.hover,
-                      boxShadow: 2,
+                      boxShadow: 3,
                     },
-                    mb: 0.5,
                     display: "flex",
                     alignItems: "center",
+                    cursor: "pointer",
                   }}
+                  onClick={() => setShowAllResponses(!showAllResponses)}
                 >
-                  <ListItemIcon sx={{ minWidth: { xs: 28, md: 36 }, pl: 0.2 }}>
-                    <Avatar
+                  {showAllResponses ? (
+                    <ExpandLessIcon
                       sx={{
-                        width: { xs: 22, md: 28 },
-                        height: { xs: 22, md: 28 },
-                        bgcolor: hoveredSlotInfo
-                          ? isAvailable
-                            ? "primary.main"
-                            : "secondary.main"
-                          : "grey.400",
-                        opacity: hoveredSlotInfo && !isAvailable ? 0.7 : 1,
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: { xs: "0.9rem", md: "1.1rem" },
-                        border: (theme) =>
-                          `2px solid ${theme.palette.background.paper}`,
-                        boxShadow: 1,
-                        transition: "box-shadow 0.2s, border 0.2s",
+                        mx: 0.3,
+                        px: 0.5,
                       }}
-                    >
-                      {(uniqueUser as string).charAt(0)}
-                    </Avatar>
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={uniqueUser as string}
-                    onMouseEnter={() =>
-                      setHoveredUserName(uniqueUser as string)
-                    }
-                    onMouseLeave={() => setHoveredUserName(null)}
-                    primaryTypographyProps={{
-                      variant: "body2",
-                      fontSize: { xs: "0.7rem", md: "1rem" },
-                      sx: hoveredSlotInfo
-                        ? isAvailable
-                          ? {
-                              fontWeight: 500,
-                            }
-                          : {
-                              color: "text.disabled",
-                              textDecoration: "line-through",
-                            }
-                        : {
-                            fontWeight: 500,
-                          },
-                    }}
-                  />
+                    />
+                  ) : (
+                    <>
+                      <ListItemText
+                        sx={{
+                          pl: 0.8,
+                        }}
+                        primary={
+                          `View ${Math.max(uniqueUsersArray.length - 7, 0)} more responses`
+                        }
+                        primaryTypographyProps={{
+                          variant: "body2",
+                          fontSize: "0.7rem",
+                        }}
+                      />
+                      <ExpandMoreIcon 
+                        sx={{
+                          ml: 0,
+                          mx: 0.3,
+                          pl: 0.4,
+                          pr: 0.6,
+                        }}
+                      />
+                    </>
+                  )}
                 </ListItem>
-              );
-            })}
-          </List>
+              </Box>
+            )}
+          </Box>
         ) : (
           <Typography
             variant="body2"
