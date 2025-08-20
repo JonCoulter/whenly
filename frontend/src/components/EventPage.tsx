@@ -170,18 +170,22 @@ const EventPage: React.FC = () => {
       return time;
     });
 
+    // If endTime is "00:00" (midnight), treat as next day
+    const isMidnight = endTime === "00:00";
     // Generate all 15-minute time slots between start and end time
-    const start = parse(startTime, "HH:mm", new Date());
-    const end = parse(endTime, "HH:mm", new Date());
-    const timeSlots: string[] = [];
-    let current = start;
-    while (current < end) {
-      timeSlots.push(format(current, "HH:mm"));
-      current = addMinutes(current, 15);
-    }
-
-    // Create a slot for every combination of day and time
     days.forEach((day) => {
+      let start = parse(startTime, "HH:mm", new Date());
+      let end = parse(endTime, "HH:mm", new Date());
+      if (isMidnight) {
+        // Add 1 day to end
+        end.setDate(end.getDate() + 1);
+      }
+      const timeSlots: string[] = [];
+      let current = start;
+      while (current < end) {
+        timeSlots.push(format(current, "HH:mm"));
+        current = addMinutes(current, 15);
+      }
       timeSlots.forEach((time) => {
         if (event.eventType === "specificDays") {
           const slotId = `${day}-${time}`;
