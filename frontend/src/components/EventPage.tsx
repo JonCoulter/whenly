@@ -716,11 +716,28 @@ const EventPage: React.FC = () => {
     setIsSignInModalOpen,
   };
 
-  return isMobile ? (
-    <EventPageMobile {...eventPageProps} />
-  ) : (
-    <EventPageDesktop {...eventPageProps} />
+  return (
+    <>
+      <Helmet>
+        {/* Update page name */}
+        <title>{event?.name || "Event Details"} - Whenly</title>
+
+        {/* Update meta tags */}
+        <meta property="og:title" content={event?.name || "Event"} />
+        <meta property="og:description" content="" />
+        <meta property="og:image" content="" />
+        <meta name="twitter:title" content={event?.name || "Event"} />
+        <meta name="twitter:description" content="" />
+        <meta name="twitter:image" content="" />
+      </Helmet>
+      {isMobile ? (
+        <EventPageMobile {...eventPageProps} />
+      ) : (
+        <EventPageDesktop {...eventPageProps} />
+      )}
+    </>
   );
+
 };
 
 export default EventPage;
