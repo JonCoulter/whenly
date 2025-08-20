@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import EventForm from "./EventForm/EventForm";
 import EventFormModal from "./EventFormModal";
 

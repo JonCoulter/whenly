@@ -360,13 +360,13 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
                         borderColor: "primary.main",
                       },
                       "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                        {
-                          borderColor: "primary.main",
-                        },
+                      {
+                        borderColor: "primary.main",
+                      },
                     }}
                   >
-                    {timeOptions.map((time) => (
-                      <MenuItem key={`start-${time}`} value={time}>
+                    {timeOptions.map((time, idx) => (
+                      <MenuItem key={`start-${time}-${idx}`} value={time}>
                         {time}
                       </MenuItem>
                     ))}
@@ -388,13 +388,13 @@ const EventForm: React.FC<EventFormProps> = ({ onSubmit, paperProps }) => {
                         borderColor: "primary.main",
                       },
                       "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                        {
-                          borderColor: "primary.main",
-                        },
+                      {
+                        borderColor: "primary.main",
+                      },
                     }}
                   >
-                    {timeOptions.map((time) => (
-                      <MenuItem key={`end-${time}`} value={time}>
+                    {timeOptions.map((time, idx) => (
+                      <MenuItem key={`end-${time}-${idx}`} value={time}>
                         {time}
                       </MenuItem>
                     ))}
