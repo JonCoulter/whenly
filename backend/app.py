@@ -2,7 +2,7 @@ import os
 import pathlib
 import requests
 import google.auth.transport.requests
-from flask import Flask, session, abort, redirect, request, jsonify
+from flask import Flask, session, abort, redirect, request, jsonify, send_from_directory
 from flask_cors import CORS
 from google.oauth2 import id_token, credentials as google_credentials
 from google_auth_oauthlib.flow import Flow
@@ -16,6 +16,7 @@ import json
 
 from config import config
 from models import db, Event, AvailabilitySlot, Response, init_app
+from meta_middleware import MetaTagMiddleware
 
 # === Flask App Factory ===
 def create_app(config_name='default'):
@@ -639,6 +640,20 @@ def create_app(config_name='default'):
     # Create database tables
     with app.app_context():
         db.create_all()
+    
+    # Apply meta tag middleware for dynamic SEO
+    app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
+    
+    # Serve static files from frontend build
+    @app.route('/<path:filename>')
+    def serve_static(filename):
+        """Serve static files from the frontend build directory"""
+        return send_from_directory('frontend', filename)
+    
+    @app.route('/')
+    def serve_index():
+        """Serve the main index.html file"""
+        return send_from_directory('frontend', 'index.html')
     
     return app
 
