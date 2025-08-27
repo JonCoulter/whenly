@@ -3,6 +3,7 @@ import json
 from flask import request, Response, render_template_string
 from models import Event
 from config import config
+from werkzeug.wrappers import Request  # Add this import
 
 class MetaTagMiddleware:
     """
@@ -17,7 +18,7 @@ class MetaTagMiddleware:
         
     def __call__(self, environ, start_response):
         # Create request object
-        req = request.__class__(environ)
+        req = Request(environ)
         
         # Check if this is a request to an event page
         event_match = self.event_pattern.match(req.path)
