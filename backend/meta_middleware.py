@@ -53,7 +53,7 @@ class MetaTagMiddleware:
             
             # Read the original index.html
             try:
-                with open('frontend/index.html', 'r', encoding='utf-8') as f:
+                with open('frontend/dist/index.html', 'r', encoding='utf-8') as f:
                     html_content = f.read()
             except FileNotFoundError:
                 # If frontend isn't built yet, use the fallback template
@@ -92,7 +92,8 @@ class MetaTagMiddleware:
             status = '200 OK'
             response_headers = [('Content-Type', 'text/html; charset=utf-8')]
             start_response(status, response_headers)
-            return [modified_html.encode('utf-8')]
+            response = Response(modified_html, content_type='text/html; charset=utf-8')
+            return response(environ, start_response)
             
         except Exception as e:
             # Log error and fall back to original behavior
