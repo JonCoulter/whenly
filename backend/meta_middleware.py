@@ -3,7 +3,7 @@ import json
 from flask import request, Response, render_template_string
 from models import Event
 from config import config
-from werkzeug.wrappers import Request  # Add this import
+from werkzeug.wrappers import Request
 
 class MetaTagMiddleware:
     """
@@ -105,18 +105,18 @@ class MetaTagMiddleware:
         creator_name = event_data.get('creatorName', 'Anonymous')
         
         # Create description
-        if event_data.get('eventType') == 'specificDays':
-            days = event_data.get('specificDays', [])
-            if days:
-                description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s). Find the best time to meet with Whenly."
-            else:
-                description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
-        else:
-            days = event_data.get('daysOfWeek', [])
-            if days:
-                description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}. Find the best time to meet with Whenly."
-            else:
-                description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
+        # if event_data.get('eventType') == 'specificDays':
+        #     days = event_data.get('specificDays', [])
+        #     if days:
+        #         description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s). Find the best time to meet with Whenly."
+        #     else:
+        #         description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
+        # else:
+        #     days = event_data.get('daysOfWeek', [])
+        #     if days:
+        #         description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}. Find the best time to meet with Whenly."
+        #     else:
+        #         description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
         
         # Get the full URL
         base_url = req.url_root.rstrip('/')
@@ -124,17 +124,17 @@ class MetaTagMiddleware:
         
         # Generate meta tags
         meta_tags = {
-            'title': f"{event_name} - Whenly",
-            'description': description,
+            'title': event_name,
+            'description': "",
             'og:title': event_name,
-            'og:description': description,
+            'og:description': "",
             'og:url': event_url,
             'og:type': 'website',
-            'og:image': f"{base_url}/og-image.png",
+            'og:image': "",
             'twitter:card': 'summary_large_image',
             'twitter:title': event_name,
-            'twitter:description': description,
-            'twitter:image': f"{base_url}/og-image.png",
+            'twitter:description': "",
+            'twitter:image': "",
             'twitter:url': event_url
         }
         
