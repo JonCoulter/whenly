@@ -642,7 +642,39 @@ def create_app(config_name='default'):
         db.create_all()
     
     # Apply meta tag middleware for dynamic SEO
-    app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
+    # app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
+    
+        
+    def inject_meta_tags(html: str, event_id: str) -> str:
+        """
+        Simple meta tag injection logic.
+        Replace this with whatever your current MetaTagMiddleware does.
+        """
+        meta = f"""
+        <title>Whenly Event {event_id}</title>
+        <meta property="og:title" content="Event {event_id} | Whenly">
+        <meta property="og:description" content="Join this event on Whenly!">
+        <meta property="og:url" content="https://whenlymeet.com/e/{event_id}">
+        <meta property="og:type" content="website">
+        """
+        return html.replace("</head>", f"{meta}\n</head>", 1)
+
+    @app.route("/e/<event_id>")
+    def event_page(event_id):
+        """
+        Serve index.html but inject dynamic meta tags for social previews.
+        """
+        index_path = os.path.join(app.static_folder, "index.html")
+
+        if not os.path.exists(index_path):
+            return Response("index.html not found", status=500)
+
+        with open(index_path, "r") as f:
+            html = f.read()
+
+        html_with_meta = inject_meta_tags(html, event_id)
+
+        return Response(html_with_meta, mimetype="text/html")
     
     # Serve static files from frontend build
     @app.route('/<path:filename>')
