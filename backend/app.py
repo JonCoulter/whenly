@@ -20,7 +20,11 @@ from meta_middleware import MetaTagMiddleware
 
 # === Flask App Factory ===
 def create_app(config_name='default'):
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(pathlib.Path(__file__).parent, "frontend", "dist"),
+        static_url_path=""
+    )
     
     # Load configuration
     app.config.from_object(config[config_name])
@@ -643,7 +647,6 @@ def create_app(config_name='default'):
     
     # Apply meta tag middleware for dynamic SEO
     # app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
-    
         
     def inject_meta_tags(html: str, event_id: str) -> str:
         """
@@ -676,17 +679,14 @@ def create_app(config_name='default'):
 
         return Response(html_with_meta, mimetype="text/html")
     
-    # Serve static files from frontend build
-    @app.route('/<path:filename>')
-    def serve_static(filename):
-        """Serve static files from the frontend build directory"""
-        return send_from_directory('frontend', filename)
-    
-    @app.route('/')
-    def serve_index():
-        """Serve the main index.html file"""
-        return send_from_directory('frontend', 'index.html')
-    
+    # Serve React build fallback
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def catch_all(path):
+        if os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        return send_from_directory(app.static_folder, "index.html")
+
     return app
 
 # === Run ===
