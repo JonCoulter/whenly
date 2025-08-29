@@ -8,11 +8,11 @@ BACKUP_DIR=backups
 BACKUP_FILE=$(BACKUP_DIR)/$(POSTGRES_DB)_backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 # Production: build frontend and run all services
-prod: build-frontend
+prod:
 	$(DC) -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # Development: build frontend and use dev overrides for hot reload, code mounting, etc.
-dev: build-frontend
+dev:
 	$(DC) -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 # Bring all containers down
@@ -46,10 +46,6 @@ frontend-dev:
 # Run only the backend dev container
 backend-dev: build-frontend
 	$(DC) -f docker-compose.yml -f docker-compose.dev.yml up -d --build backend
-
-# Build frontend for production (required for meta tag middleware)
-build-frontend:
-	./scripts/build_and_copy_frontend.sh
 
 # Run only the db dev container
 db-dev:
