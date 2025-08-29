@@ -55,7 +55,7 @@ const EventResponsesPanel: React.FC<any> = (props) => {
     rowGap: 0.5,
     width: "100%",
     overflowX: "hidden",
-    minHeight: isMobile ? 120 : 'auto', // Optional visual polish
+    minHeight: 'auto', // Optional visual polish
   };
 
   const expandedListStyles = {
