@@ -691,11 +691,11 @@ def create_app(config_name='default'):
             <meta property="og:description" content="{description}">
             <meta property="og:url" content="{event_url}">
             <meta property="og:type" content="website">
-            <meta property="og:image" content="{request.url_root.rstrip('/')}/og-image.png">
+            <meta property="og:image" content="">
             <meta name="twitter:card" content="summary_large_image">
             <meta name="twitter:title" content="{event_name}">
             <meta name="twitter:description" content="{description}">
-            <meta name="twitter:image" content="{request.url_root.rstrip('/')}/og-image.png">
+            <meta name="twitter:image" content="">
             <meta name="twitter:url" content="{event_url}">
         </head>
         <body>
