@@ -8,17 +8,17 @@ services:
     networks:
       - app-net
 
+services:
   nginx:
-    image: nginx:1.25-alpine
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/letsencrypt:ro
+      - ./frontend/dist:/usr/share/nginx/html
     depends_on:
-      - frontend
       - backend
     networks:
       - app-net
