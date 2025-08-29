@@ -648,107 +648,65 @@ def create_app(config_name='default'):
     
     # Apply meta tag middleware for dynamic SEO
     # app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
-    
-    def inject_meta_tags(html: str, event_data: dict, request_url: str) -> str:
-        """Inject dynamic meta tags based on event data"""
-        
-        event_name = event_data.get('name', 'Whenly Event')
-        creator_name = event_data.get('creatorName', 'Anonymous')
-        
-        # Escape HTML entities in the data
-        def escape_html(text):
-            return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&#x27;')
-        
-        event_name = escape_html(event_name)
-        creator_name = escape_html(creator_name)
-        
-        # Create description based on event type
-        if event_data.get('eventType') == 'specificDays':
-            days = event_data.get('specificDays', [])
-            description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s). Find the best time to meet with Whenly."
-        else:
-            days = event_data.get('daysOfWeek', [])
-            if days:
-                description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}. Find the best time to meet with Whenly."
-            else:
-                description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
-        
-        description = escape_html(description)
-        
-        # Build meta tags
-        title = f"{event_name} - Whenly"
-        og_image = f"{request_url.split('/e/')[0]}/og-image.png"
-        
-        # Remove existing meta tags that we want to replace
-        patterns_to_remove = [
-            r'<title>.*?</title>',
-            r'<meta name="description"[^>]*>',
-            r'<meta property="og:title"[^>]*>',
-            r'<meta property="og:description"[^>]*>',
-            r'<meta property="og:url"[^>]*>',
-            r'<meta property="og:type"[^>]*>',
-            r'<meta property="og:image"[^>]*>',
-            r'<meta name="twitter:card"[^>]*>',
-            r'<meta name="twitter:title"[^>]*>',
-            r'<meta name="twitter:description"[^>]*>',
-            r'<meta name="twitter:image"[^>]*>',
-            r'<meta name="twitter:url"[^>]*>'
-        ]
-        
-        for pattern in patterns_to_remove:
-            html = re.sub(pattern, '', html, flags=re.IGNORECASE | re.DOTALL)
-        
-        # Build new meta tags
-        meta_tags = f"""<title>{title}</title>
-    <meta name="description" content="{description}">
-    <meta property="og:title" content="{event_name}">
-    <meta property="og:description" content="{description}">
-    <meta property="og:url" content="{request_url}">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="{og_image}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{event_name}">
-    <meta name="twitter:description" content="{description}">
-    <meta name="twitter:image" content="{og_image}">
-    <meta name="twitter:url" content="{request_url}">"""
-        
-        # Insert meta tags before closing head tag
-        return html.replace("</head>", f"    {meta_tags}\n</head>", 1)
 
     @app.route("/e/<event_id>")
     def event_page(event_id):
-        """Serve index.html with dynamic meta tags for event pages"""
-        
+        """Serve crawler-friendly HTML with meta tags for event previews"""
+
         # Get event data from database
         try:
             event = Event.query.filter_by(id=event_id).first()
             if not event:
                 return FlaskResponse("Event not found", status=404)
-            
+
             event_data = event.to_dict()
         except Exception as e:
             print(f"Error fetching event: {e}")
             return FlaskResponse("Error loading event", status=500)
-        
-        # Read the index.html file
-        index_path = os.path.join(app.static_folder, "index.html")
-        
-        if not os.path.exists(index_path):
-            return FlaskResponse("Frontend not built. Run 'npm run build' first.", status=500)
-        
-        try:
-            with open(index_path, "r", encoding='utf-8') as f:
-                html = f.read()
-        except Exception as e:
-            print(f"Error reading index.html: {e}")
-            return FlaskResponse("Error loading page", status=500)
-        
-        # Inject meta tags
-        full_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
-        html_with_meta = inject_meta_tags(html, event_data, full_url)
-        
-        return FlaskResponse(html_with_meta, mimetype="text/html")
-    
+
+        # Build meta tag values
+        event_name = event_data.get('name', 'Whenly Event')
+        creator_name = event_data.get('creatorName', 'Anonymous')
+        event_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
+
+        if event_data.get('eventType') == 'specificDays':
+            days = event_data.get('specificDays', [])
+            description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s)."
+        else:
+            days = event_data.get('daysOfWeek', [])
+            if days:
+                description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}."
+            else:
+                description = f"Join {creator_name} for '{event_name}'."
+
+        # Build simple crawler HTML
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>{event_name} - Whenly</title>
+            <meta name="description" content="{description}">
+            <meta property="og:title" content="{event_name}">
+            <meta property="og:description" content="{description}">
+            <meta property="og:url" content="{event_url}">
+            <meta property="og:type" content="website">
+            <meta property="og:image" content="{request.url_root.rstrip('/')}/og-image.png">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{event_name}">
+            <meta name="twitter:description" content="{description}">
+            <meta name="twitter:image" content="{request.url_root.rstrip('/')}/og-image.png">
+            <meta name="twitter:url" content="{event_url}">
+        </head>
+        <body>
+            <h1>{event_name}</h1>
+            <p>{description}</p>
+        </body>
+        </html>
+        """
+
+        return FlaskResponse(html, mimetype="text/html")
+
     # Static file serving for assets
     @app.route("/<path:filename>")
     def static_files(filename):
