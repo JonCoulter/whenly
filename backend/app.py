@@ -1,4 +1,5 @@
 import os
+import re
 import pathlib
 import requests
 import google.auth.transport.requests
@@ -647,49 +648,137 @@ def create_app(config_name='default'):
     
     # Apply meta tag middleware for dynamic SEO
     # app.wsgi_app = MetaTagMiddleware(app.wsgi_app)
+    
+    def inject_meta_tags(html: str, event_data: dict, request_url: str) -> str:
+        """Inject dynamic meta tags based on event data"""
         
-    def inject_meta_tags(html: str, event_id: str) -> str:
-        """
-        Simple meta tag injection logic.
-        Replace this with whatever your current MetaTagMiddleware does.
-        """
-        meta = f"""
-        <title>Whenly Event {event_id}</title>
-        <meta property="og:title" content="Event {event_id} | Whenly">
-        <meta property="og:description" content="Join this event on Whenly!">
-        <meta property="og:url" content="https://whenlymeet.com/e/{event_id}">
-        <meta property="og:type" content="website">
-        """
-        return html.replace("</head>", f"{meta}\n</head>", 1)
+        event_name = event_data.get('name', 'Whenly Event')
+        creator_name = event_data.get('creatorName', 'Anonymous')
+        
+        # Escape HTML entities in the data
+        def escape_html(text):
+            return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace("'", '&#x27;')
+        
+        event_name = escape_html(event_name)
+        creator_name = escape_html(creator_name)
+        
+        # Create description based on event type
+        if event_data.get('eventType') == 'specificDays':
+            days = event_data.get('specificDays', [])
+            description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s). Find the best time to meet with Whenly."
+        else:
+            days = event_data.get('daysOfWeek', [])
+            if days:
+                description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}. Find the best time to meet with Whenly."
+            else:
+                description = f"Join {creator_name} for '{event_name}'. Find the best time to meet with Whenly."
+        
+        description = escape_html(description)
+        
+        # Build meta tags
+        title = f"{event_name} - Whenly"
+        og_image = f"{request_url.split('/e/')[0]}/og-image.png"
+        
+        # Remove existing meta tags that we want to replace
+        patterns_to_remove = [
+            r'<title>.*?</title>',
+            r'<meta name="description"[^>]*>',
+            r'<meta property="og:title"[^>]*>',
+            r'<meta property="og:description"[^>]*>',
+            r'<meta property="og:url"[^>]*>',
+            r'<meta property="og:type"[^>]*>',
+            r'<meta property="og:image"[^>]*>',
+            r'<meta name="twitter:card"[^>]*>',
+            r'<meta name="twitter:title"[^>]*>',
+            r'<meta name="twitter:description"[^>]*>',
+            r'<meta name="twitter:image"[^>]*>',
+            r'<meta name="twitter:url"[^>]*>'
+        ]
+        
+        for pattern in patterns_to_remove:
+            html = re.sub(pattern, '', html, flags=re.IGNORECASE | re.DOTALL)
+        
+        # Build new meta tags
+        meta_tags = f"""<title>{title}</title>
+    <meta name="description" content="{description}">
+    <meta property="og:title" content="{event_name}">
+    <meta property="og:description" content="{description}">
+    <meta property="og:url" content="{request_url}">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="{og_image}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{event_name}">
+    <meta name="twitter:description" content="{description}">
+    <meta name="twitter:image" content="{og_image}">
+    <meta name="twitter:url" content="{request_url}">"""
+        
+        # Insert meta tags before closing head tag
+        return html.replace("</head>", f"    {meta_tags}\n</head>", 1)
 
     @app.route("/e/<event_id>")
     def event_page(event_id):
-        """
-        Serve index.html but inject dynamic meta tags for social previews.
-        """
+        """Serve index.html with dynamic meta tags for event pages"""
+        
+        # Get event data from database
+        try:
+            event = Event.query.filter_by(id=event_id).first()
+            if not event:
+                return Response("Event not found", status=404)
+            
+            event_data = event.to_dict()
+        except Exception as e:
+            print(f"Error fetching event: {e}")
+            return Response("Error loading event", status=500)
+        
+        # Read the index.html file
         index_path = os.path.join(app.static_folder, "index.html")
-
+        
         if not os.path.exists(index_path):
-            return FlaskResponse("index.html not found", status=500)
-
-        with open(index_path, "r") as f:
-            html = f.read()
-
-        html_with_meta = inject_meta_tags(html, event_id)
-
-        return FlaskResponse(html_with_meta, mimetype="text/html")
+            return Response("Frontend not built. Run 'npm run build' first.", status=500)
+        
+        try:
+            with open(index_path, "r", encoding='utf-8') as f:
+                html = f.read()
+        except Exception as e:
+            print(f"Error reading index.html: {e}")
+            return Response("Error loading page", status=500)
+        
+        # Inject meta tags
+        full_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
+        html_with_meta = inject_meta_tags(html, event_data, full_url)
+        
+        return Response(html_with_meta, mimetype="text/html")
     
-    # Serve React build fallback
+    @app.route("/api/<path:path>")
+    def api_routes(path):
+        """Handle API routes - add your API logic here"""
+        # Your existing API routes go here
+        pass
+    
+    # Static file serving for assets
+    @app.route("/<path:filename>")
+    def static_files(filename):
+        """Serve static files (JS, CSS, images, etc.)"""
+        file_path = os.path.join(app.static_folder, filename)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return send_from_directory(app.static_folder, filename)
+        # If file doesn't exist, fall through to catch_all
+        return catch_all(filename)
+    
+    # Catch-all route for React Router
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def catch_all(path):
-        if os.path.exists(os.path.join(app.static_folder, path)):
-            return send_from_directory(app.static_folder, path)
+        """Serve React app for all other routes"""
+        # Don't serve index.html for event pages - they're handled above
+        if path.startswith("e/"):
+            return Response("Event not found", status=404)
+            
+        # For all other routes, serve the React app
         return send_from_directory(app.static_folder, "index.html")
 
     return app
 
-# === Run ===
 if __name__ == '__main__':
     app = create_app()
     app.run(debug=True, host='0.0.0.0')
