@@ -723,37 +723,31 @@ def create_app(config_name='default'):
         try:
             event = Event.query.filter_by(id=event_id).first()
             if not event:
-                return Response("Event not found", status=404)
+                return FlaskResponse("Event not found", status=404)
             
             event_data = event.to_dict()
         except Exception as e:
             print(f"Error fetching event: {e}")
-            return Response("Error loading event", status=500)
+            return FlaskResponse("Error loading event", status=500)
         
         # Read the index.html file
         index_path = os.path.join(app.static_folder, "index.html")
         
         if not os.path.exists(index_path):
-            return Response("Frontend not built. Run 'npm run build' first.", status=500)
+            return FlaskResponse("Frontend not built. Run 'npm run build' first.", status=500)
         
         try:
             with open(index_path, "r", encoding='utf-8') as f:
                 html = f.read()
         except Exception as e:
             print(f"Error reading index.html: {e}")
-            return Response("Error loading page", status=500)
+            return FlaskResponse("Error loading page", status=500)
         
         # Inject meta tags
         full_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
         html_with_meta = inject_meta_tags(html, event_data, full_url)
         
-        return Response(html_with_meta, mimetype="text/html")
-    
-    @app.route("/api/<path:path>")
-    def api_routes(path):
-        """Handle API routes - add your API logic here"""
-        # Your existing API routes go here
-        pass
+        return FlaskResponse(html_with_meta, mimetype="text/html")
     
     # Static file serving for assets
     @app.route("/<path:filename>")
@@ -772,7 +766,7 @@ def create_app(config_name='default'):
         """Serve React app for all other routes"""
         # Don't serve index.html for event pages - they're handled above
         if path.startswith("e/"):
-            return Response("Event not found", status=404)
+            return FlaskResponse("Event not found", status=404)
             
         # For all other routes, serve the React app
         return send_from_directory(app.static_folder, "index.html")
