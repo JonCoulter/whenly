@@ -555,8 +555,28 @@ const EventPage: React.FC = () => {
           const [year, month, day] = slot.date.split("-").map(Number);
           const [hours, minutes] = slot.time.split(":").map(Number);
           slotStart = new Date(year, month - 1, day, hours, minutes);
+        } else if (slot.dayOfWeek) {
+          // For daysOfWeek events, map each slot to the correct date in the range
+          // Find the first date in the range that matches this dayOfWeek
+          const startDateObj = new Date(startDate);
+          const dayOfWeekIndex = [
+            "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+          ].indexOf(slot.dayOfWeek);
+          const currentDayIndex = startDateObj.getDay();
+          let offset = dayOfWeekIndex - currentDayIndex;
+          if (offset < 0) offset += 7;
+          const slotDate = new Date(startDateObj);
+          slotDate.setDate(startDateObj.getDate() + offset);
+          const [hours, minutes] = slot.time.split(":").map(Number);
+          slotStart = new Date(
+            slotDate.getFullYear(),
+            slotDate.getMonth(),
+            slotDate.getDate(),
+            hours,
+            minutes
+          );
         } else {
-          // For days of week events, use today's date
+          // Fallback: use today's date
           const today = new Date();
           const [hours, minutes] = slot.time.split(":").map(Number);
           slotStart = new Date(

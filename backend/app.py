@@ -2,7 +2,7 @@ import os
 import pathlib
 import requests
 import google.auth.transport.requests
-from flask import Flask, session, abort, redirect, request, jsonify, send_from_directory
+from flask import Flask, session, Response as FlaskResponse, abort, redirect, request, jsonify, send_from_directory
 from flask_cors import CORS
 from google.oauth2 import id_token, credentials as google_credentials
 from google_auth_oauthlib.flow import Flow
@@ -670,14 +670,14 @@ def create_app(config_name='default'):
         index_path = os.path.join(app.static_folder, "index.html")
 
         if not os.path.exists(index_path):
-            return Response("index.html not found", status=500)
+            return FlaskResponse("index.html not found", status=500)
 
         with open(index_path, "r") as f:
             html = f.read()
 
         html_with_meta = inject_meta_tags(html, event_id)
 
-        return Response(html_with_meta, mimetype="text/html")
+        return FlaskResponse(html_with_meta, mimetype="text/html")
     
     # Serve React build fallback
     @app.route("/", defaults={"path": ""})
