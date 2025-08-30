@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ title = "Whenly" }) => {
               {title}
             </Typography>
             <img
-              src="/calendar.png"
+              src="/favicon.ico"
               alt="Calendar"
               style={{ width: "28px", height: "28px" }}
             />
