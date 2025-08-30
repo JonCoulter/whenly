@@ -669,15 +669,7 @@ def create_app(config_name='default'):
         creator_name = event_data.get('creatorName', 'Anonymous')
         event_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
 
-        if event_data.get('eventType') == 'specificDays':
-            days = event_data.get('specificDays', [])
-            description = f"Join {creator_name} for '{event_name}' on {len(days)} selected day(s)."
-        else:
-            days = event_data.get('daysOfWeek', [])
-            if days:
-                description = f"Join {creator_name} for '{event_name}' on {', '.join(days)}."
-            else:
-                description = f"Join {creator_name} for '{event_name}'."
+        description = f"Find a time to meet for {event_name}."
 
         # Build simple crawler HTML
         html = f"""
