@@ -686,6 +686,7 @@ def create_app(config_name='default'):
         <head>
             <meta charset="UTF-8">
             <title>{event_name} - Whenly</title>
+            <link rel="icon" type="image/png" href="{request.url_root.rstrip('/')}/calendar.png" />
             <meta name="description" content="{description}">
             <meta property="og:title" content="{event_name}">
             <meta property="og:description" content="{description}">
