@@ -670,9 +670,9 @@ def create_app(config_name='default'):
         
         if event_data.get('creatorName') is not None and event_data.get('creatorName') != '':
             creator_name = event_data.get('creatorName', 'Someone')
-            description = f"{creator_name} wants to find a time to meet for {event_name}."
+            description = f"{creator_name} wants to find a time to meet."
         else:
-            description = f"Find a time to meet for {event_name}."
+            description = f"Find a time to meet."
 
         # Build simple crawler HTML
         html = f"""
