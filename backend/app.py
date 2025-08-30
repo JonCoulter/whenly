@@ -666,10 +666,13 @@ def create_app(config_name='default'):
 
         # Build meta tag values
         event_name = event_data.get('name', 'Whenly Event')
-        creator_name = event_data.get('creatorName', 'Anonymous')
         event_url = f"{request.url_root.rstrip('/')}/e/{event_id}"
-
-        description = f"Find a time to meet for {event_name}."
+        
+        if event_data.get('creatorName') is not None and event_data.get('creatorName') != '':
+            creator_name = event_data.get('creatorName', 'Someone')
+            description = f"{creator_name} wants to find a time to meet for {event_name}."
+        else:
+            description = f"Find a time to meet for {event_name}."
 
         # Build simple crawler HTML
         html = f"""
@@ -678,7 +681,7 @@ def create_app(config_name='default'):
         <head>
             <meta charset="UTF-8">
             <title>{event_name} - Whenly</title>
-            <link rel="icon" type="image/png" href="{request.url_root.rstrip('/')}/calendar.png" />
+            <link rel="icon" type="image/png" href="{request.url_root.rstrip('/')}/favicon.ico" />
             <meta name="description" content="{description}">
             <meta property="og:title" content="{event_name}">
             <meta property="og:description" content="{description}">
